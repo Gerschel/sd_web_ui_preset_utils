@@ -15,7 +15,7 @@ you are doing it in an iteration, some parts are locked in scope, and others are
 times fail, and you would need to use gr.update instead, this all depends on if you use a list comprehension inside a for loop, in which you also need to use closure. 
 You can read about some of it here https://github.com/gradio-app/gradio/discussions/2795 and here https://github.com/gradio-app/gradio/discussions/2769
 
-The initial reason why I got in to this, is because I'm also working on an extended version of my xzy https://github.com/Gerschel/xyz-plot-grid 
+The initial reason why I got in to this, is because I'm also working on an extended version of my xzy https://github.com/Gerschel/xyz-plot-grid and needed to implement settings for it. https://github.com/AUTOMATIC1111/stable-diffusion-webui/discussions/4163#discussioncomment-4296152
 
 EXTENDED VERSION: Not out for release, it was pending this project first. But you could see how it had presets involved.
 ![image](https://user-images.githubusercontent.com/9631031/207840968-42973716-09cc-4fbb-b308-9b330e4ed57d.png)
