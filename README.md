@@ -13,7 +13,7 @@ The thing that I had to wrap my head around, was how I needed to modify and cont
 python code in their methods, and work around inconsistent bugs. An example, when sending some updates to some components, on a regular, it works fine, but if
 you are doing it in an iteration, some parts are locked in scope, and others are not, in an inconsistent way, where a gr.Dropdown.update would work, and at other
 times fail, and you would need to use gr.update instead, this all depends on if you use a list comprehension inside a for loop, in which you also need to use closure. 
-You can read about some of it here https://github.com/gradio-app/gradio/discussions/2795 and here https://github.com/gradio-app/gradio/discussions/2769
+You can read about some of it here https://github.com/gradio-app/gradio/discussions/2795 here https://github.com/gradio-app/gradio/discussions/2769 and here https://github.com/AUTOMATIC1111/stable-diffusion-webui/issues/3815#issuecomment-1338600552
 
 The initial reason why I got in to this, is because I'm also working on an extended version of my xzy https://github.com/Gerschel/xyz-plot-grid and needed to implement settings for it. https://github.com/AUTOMATIC1111/stable-diffusion-webui/discussions/4163#discussioncomment-4296152
 
