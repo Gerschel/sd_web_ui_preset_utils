@@ -34,7 +34,6 @@ class Script(scripts.Script):
         #TODO: Reorganize for grabbing certain values in time
         # ! It looks like I can do settings for any custom script, the issue is load order
         self.available_components = [
-            "Superimpose alpha",
             "Sampling Steps",
             "Sampling method",
             "Width",
