@@ -1,6 +1,15 @@
 {
     "additionalComponents": 
     {
-        "Net height" : null
-    }
+        "X Type" : "xyz_x_type",
+        "Y Type" : "xyz_y_type",
+        "Z Type" : "xyz_z_type",
+        "X Values" : "xyz_x_values",
+        "Y Values" : "xyz_y_values",
+        "Z Values" : "xyz_z_values",
+        "X type" : "x_type",
+        "Y type" : "y_type",
+        "X values" : "x_values",
+        "Y values" : "y_values"
+   }
 }

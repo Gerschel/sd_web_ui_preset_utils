@@ -8,31 +8,14 @@ from pprint import pprint
 from modules.ui import gr_show
 
 BASEDIR = scripts.basedir()
-#! set script to always visible
-#! try event handlers in ui, if not, then put in after component and put under if and use counter to test if all were loaded
-#! create some way of letting user load
-# ! NOTE: Current task
-# * Dealing with list comprehension in save button
-# add other component by label and see if changs picks it up before handing off to save method
-# the change method when it learns of it's output it can't learn about more
-# means, when self. componenet map grows, the method thinks it doesn't
-# so when I reach out of scope, I can get new knowledge of components, but can't retrieve the values
-#? how does change method get and set values
-# somehow change method knows proper location in memory of values when reading and writing.
-
-
-# list of attempts to try: to note I appended z to extension folder name, but do extensions or scripts load first
-# using net height as it's in depth mask txt2img near bottom of my script list
-#   change method doesn't include Net height because it is None at the time, lets force it through by naming it specifically
 
 class Script(scripts.Script):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         #TODO: A user can check off which fields they don't want a component using
-        #TODO: Fix dynamic reloading of preset dropdown
         #TODO: Fix equal heights of row
         #TODO: Reorganize for grabbing certain values in time
-        # ! It looks like I can do settings for any custom script, the issue is load order
+        # ! It looks like I can do settings for any custom script, the issue is script load order
         self.available_components = [
             "Sampling Steps",
             "Sampling method",
@@ -134,7 +117,7 @@ A goal of this script is to manage presets for ALL scripts, with choices of cust
 
     def after_component(self, component, **kwargs):
         if hasattr(component, "label") or hasattr(component, "elem_id"):
-            self.all_components_and_elem_ids.update({f"label - {component.elem_id} # elem_id - {component.elem_id}" if hasattr(component, "label") and hasattr(component, "elem_id") else f" label {component.label}" if hasattr(component, "label") else f"# elem_id{component.elem_id}" : kwargs})
+            self.all_components_and_elem_ids.update({f"label - {component.label} # elem_id - {component.elem_id}" if hasattr(component, "label") and hasattr(component, "elem_id") else f" label {component.label}" if hasattr(component, "label") else f"# elem_id{component.elem_id}" : kwargs})
         label = kwargs.get("label")
         ele = kwargs.get("elem_id")
         #if label in self.component_map or label in self.additional_components_map:# and ele == self.additional_components["additionalComponents"]) or (ele == self.additional_components["additionalComponents"]):
@@ -192,10 +175,39 @@ A goal of this script is to manage presets for ALL scripts, with choices of cust
             """
             # Format new_setting from tuple of values, and map them to their label
             try:
+                # new_settings is a list of values from the inputs; new_settings[i] is the specific value
                 if self.is_txt2img:
+                    return_dict = {}
                     new_setting = {k:new_setting[i] if k != "Sampling method" else modules.sd_samplers.samplers[new_setting[i]].name for i, k in enumerate(x for x in self.available_components if self.component_map[x] is not None)}
+                    #! TODO: This does not work with datasets or highlighted text that use the type of index
+                    for i,k in enumerate(x for x in self.component_map if self.component_map[x] is not None):
+                        if k != "Sampling method" and not hasattr(self.component_map[k], "type"):
+                            return_dict.update({k: new_setting[i]})
+                        elif k == "Sampling method":
+                            return_dict.update({k: modules.sd_samplers.samplers[new_setting[i]].name})
+                        else:
+                            return_dict.update({k: self.component_map[k].choices[new_setting[i]]})
+                    new_setting = return_dict
+
+                    #new_setting = {k:new_setting[i] if \
+                    #    k != "Sampling method" and not hasattr(self.component_map[k], "type") else modules.sd_samplers.samplers[new_setting[i]].name if \
+                    #    k == "Sampling method" else  new_setting[i] if \
+                    #    isinstance(self.component_map[k].type, str) else self.component_map[k].choices[new_setting[i]] \
+                    #    for i, k in enumerate(x for x in self.available_components if self.component_map[x] is not None)}
                 else:
-                    new_setting = {k:new_setting[i] if k != "Sampling method" else modules.sd_samplers.samplers_for_img2img[new_setting[i]].name for i, k in enumerate(x for x in self.available_components if self.component_map[x])}
+                    return_dict = {}
+                    # NOTE: The only reason why I need to distinguish txt2img at this time, is for the available samplers
+                    #new_setting = {k:new_setting[i] if k != "Sampling method" else modules.sd_samplers.samplers_for_img2img[new_setting[i]].name for i, k in enumerate(x for x in self.available_components if self.component_map[x])}
+                    for i,k in enumerate(x for x in self.component_map if self.component_map[x] is not None):
+                        if k != "Sampling method" and not hasattr(self.component_map[k], "type"):
+                            return_dict.update({k: new_setting[i]})
+                        elif k == "Sampling method":
+                            return_dict.update({k: modules.sd_samplers.samplers_for_img2img[new_setting[i]].name})
+                        else:
+                            return_dict.update({k: self.component_map[k].choices[new_setting[i]]})
+                    new_setting = return_dict
+
+
             except IndexError as e:
                 print(f"IndexError : {e}\n\
 Length: {len(new_setting)}\tvalue: {new_setting}\n\
@@ -226,7 +238,7 @@ Length: {len(self.available_components)}\t keys: {self.available_components}")
             Fetches selected preset from dropdown choice and filters valid components from choosen preset
             non-valid components will still have None as the page didn't contain any
         """
-        return [self.all_presets[selection][comp_name] if comp_name in self.all_presets[selection] else self.component_map[comp_name].value for comp_name in self.available_components if self.component_map[comp_name] is not None and hasattr(self.component_map[comp_name], "value")]
+        return [self.all_presets[selection][comp_name] if comp_name in self.all_presets[selection] else self.component_map[comp_name].value for comp_name in list(x for x in self.available_components if self.component_map[x] is not None and hasattr(self.component_map[x], "value"))]
 
 
     def local_request_restart(self):
