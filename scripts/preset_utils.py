@@ -63,7 +63,7 @@ class Script(scripts.Script):
 
 
         self.save_as = gr.Text(render=False, label="Quick Save")
-        self.save_button = gr.Button(value="Save", variant="secondary", render=False)
+        self.save_button = gr.Button(value="Save", variant="secondary", render=False, visible=False)
 
 
         self.all_components_and_elem_ids = {}
@@ -106,9 +106,9 @@ class Script(scripts.Script):
                     with gr.Row():
                         self.preset_dropdown.render()
                     with gr.Row(equal_height=True):
-                        with gr.Column(scale=9):
-                            self.save_as.render()
-                        with gr.Column(scale=1):
+                        #with gr.Column(scale=9, equal_height=True):
+                        self.save_as.render()
+                        with gr.Column(scale=1, equal_height=True):
                             self.save_button.render()
                 # TODO: create tab
                 # TODO: Edit tab
@@ -154,11 +154,11 @@ A goal of this script is to manage presets for ALL scripts, with choices of cust
         self.save_button.click(
             fn = self.save_config(path=self.settings_file),
             inputs = [self.save_as] + [self.component_map[comp_name] for comp_name in list(x for x in self.available_components if self.component_map[x] is not None)],# if self.component_map[comp_name] is not None],
-            #outputs = self.preset_dropdown
+            outputs = [self.save_as, self.preset_dropdown]
         )
 
         self.save_as.change(
-            fn = lambda x: gr.update(variant = "primary" if bool(x) else "secondary"),
+            fn = lambda x: gr.update(variant = "primary" if bool(x) else "secondary", visible = bool(x)),
             inputs = self.save_as,
             outputs = self.save_button
         )
@@ -204,13 +204,10 @@ Length: {len(self.component_map)}\t keys: {list(self.component_map.keys())}\n\
 Length: {len(self.available_components)}\t keys: {self.available_components}")
             file = os.path.join(BASEDIR, path)
             self.all_presets.update({setting_name : new_setting})
-            #self.preset_dropdown.choices = [self.all_presets.keys()]
-            #logging.debug(self.all_presets.keys())
-            #logging.debug(self.preset_dropdown.choices)
             
             with open(file, "w") as f:
                 json.dump(self.all_presets, f, indent=4)
-            return gr.update(choices = self.preset_dropdown.choices)
+            return [gr.update(value=""), gr.update(choices = list(self.all_presets.keys()))]
         return func
         
         
