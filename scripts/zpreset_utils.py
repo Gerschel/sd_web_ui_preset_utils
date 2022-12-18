@@ -49,7 +49,7 @@ class Script(scripts.Script):
         self.save_button = gr.Button(value="Save", variant="secondary", render=False, visible=False)
 
 
-        self.all_components_and_elem_ids = {}
+        self.all_components_and_elem_ids = []
 
         #Load config from file
         self.all_presets = self.get_config(self.settings_file)
@@ -117,9 +117,10 @@ A goal of this script is to manage presets for ALL scripts, with choices of cust
 
     def after_component(self, component, **kwargs):
         if hasattr(component, "label") or hasattr(component, "elem_id"):
-            self.all_components_and_elem_ids.update({f"label - {component.label} # elem_id - {component.elem_id}" if hasattr(component, "label") and hasattr(component, "elem_id") else f" label {component.label}" if hasattr(component, "label") else f"# elem_id{component.elem_id}" : kwargs})
+            self.all_components_and_elem_ids.append({f"label - {component.label} # elem_id - {component.elem_id}" if hasattr(component, "label") and hasattr(component, "elem_id") else f" label {component.label}" if hasattr(component, "label") else f"# elem_id{component.elem_id}" : kwargs})
         label = kwargs.get("label")
         ele = kwargs.get("elem_id")
+        # TODO: element id
         #if label in self.component_map or label in self.additional_components_map:# and ele == self.additional_components["additionalComponents"]) or (ele == self.additional_components["additionalComponents"]):
         if label in self.component_map:# and ele == self.additional_components["additionalComponents"]) or (ele == self.additional_components["additionalComponents"]):
             self.component_map.update({component.label: component})
