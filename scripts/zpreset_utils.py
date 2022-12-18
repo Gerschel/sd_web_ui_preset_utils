@@ -178,7 +178,7 @@ A goal of this script is to manage presets for ALL scripts, with choices of cust
                 # new_settings is a list of values from the inputs; new_settings[i] is the specific value
                 if self.is_txt2img:
                     return_dict = {}
-                    new_setting = {k:new_setting[i] if k != "Sampling method" else modules.sd_samplers.samplers[new_setting[i]].name for i, k in enumerate(x for x in self.available_components if self.component_map[x] is not None)}
+                    #new_setting = {k:new_setting[i] if k != "Sampling method" else modules.sd_samplers.samplers[new_setting[i]].name for i, k in enumerate(x for x in self.available_components if self.component_map[x] is not None)}
                     #! TODO: This does not work with datasets or highlighted text that use the type of index
                     for i,k in enumerate(x for x in self.component_map if self.component_map[x] is not None):
                         if k != "Sampling method" and not hasattr(self.component_map[k], "type"):
