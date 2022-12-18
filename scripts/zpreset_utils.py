@@ -176,7 +176,7 @@ A goal of this script is to manage presets for ALL scripts, with choices of cust
             # Format new_setting from tuple of values, and map them to their label
             try:
                 # new_settings is a list of values from the inputs; new_settings[i] is the specific value
-                if self.is_txt2img:
+                #if self.is_txt2img:
                     return_dict = {}
                     #new_setting = {k:new_setting[i] if k != "Sampling method" else modules.sd_samplers.samplers[new_setting[i]].name for i, k in enumerate(x for x in self.available_components if self.component_map[x] is not None)}
                     #! TODO: This does not work with datasets or highlighted text that use the type of index
@@ -184,9 +184,11 @@ A goal of this script is to manage presets for ALL scripts, with choices of cust
                         if k != "Sampling method" and not hasattr(self.component_map[k], "type"):
                             return_dict.update({k: new_setting[i]})
                         elif k == "Sampling method":
-                            return_dict.update({k: modules.sd_samplers.samplers[new_setting[i]].name})
-                        else:
+                            return_dict.update({k: modules.sd_samplers.samplers[new_setting[i]].name if self.is_txt2img else  modules.sd_samplers.samplers_for_img2img[new_setting[i]].name})
+                        elif self.component_map[k].type == "index":
                             return_dict.update({k: self.component_map[k].choices[new_setting[i]]})
+                        else:
+                            return_dict.update({k: new_setting[i]})
                     new_setting = return_dict
 
                     #new_setting = {k:new_setting[i] if \
@@ -194,18 +196,18 @@ A goal of this script is to manage presets for ALL scripts, with choices of cust
                     #    k == "Sampling method" else  new_setting[i] if \
                     #    isinstance(self.component_map[k].type, str) else self.component_map[k].choices[new_setting[i]] \
                     #    for i, k in enumerate(x for x in self.available_components if self.component_map[x] is not None)}
-                else:
-                    return_dict = {}
-                    # NOTE: The only reason why I need to distinguish txt2img at this time, is for the available samplers
-                    #new_setting = {k:new_setting[i] if k != "Sampling method" else modules.sd_samplers.samplers_for_img2img[new_setting[i]].name for i, k in enumerate(x for x in self.available_components if self.component_map[x])}
-                    for i,k in enumerate(x for x in self.component_map if self.component_map[x] is not None):
-                        if k != "Sampling method" and not hasattr(self.component_map[k], "type"):
-                            return_dict.update({k: new_setting[i]})
-                        elif k == "Sampling method":
-                            return_dict.update({k: modules.sd_samplers.samplers_for_img2img[new_setting[i]].name})
-                        else:
-                            return_dict.update({k: self.component_map[k].choices[new_setting[i]]})
-                    new_setting = return_dict
+                #else:
+                #    return_dict = {}
+                #    # NOTE: The only reason why I need to distinguish txt2img at this time, is for the available samplers
+                #    #new_setting = {k:new_setting[i] if k != "Sampling method" else modules.sd_samplers.samplers_for_img2img[new_setting[i]].name for i, k in enumerate(x for x in self.available_components if self.component_map[x])}
+                #    for i,k in enumerate(x for x in self.component_map if self.component_map[x] is not None):
+                #        if k != "Sampling method" and not hasattr(self.component_map[k], "type"):
+                #            return_dict.update({k: new_setting[i]})
+                #        elif k == "Sampling method":
+                #            return_dict.update({k: modules.sd_samplers.samplers_for_img2img[new_setting[i]].name})
+                #        else:
+                #            return_dict.update({k: self.component_map[k].choices[new_setting[i]]})
+                #    new_setting = return_dict
 
 
             except IndexError as e:
