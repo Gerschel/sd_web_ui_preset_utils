@@ -94,18 +94,23 @@ class Script(scripts.Script):
                 with gr.Tab(label="Quick Set"):
                     with gr.Row():
                         self.preset_dropdown.render()
+
                     with gr.Row(equal_height=True):
                         #with gr.Column(scale=9, equal_height=True):
                         self.save_as.render()
+
                         with gr.Column(scale=1, equal_height=True):
                             self.save_button.render()
+
                 # TODO: create tab
                 # TODO: Edit tab
                 with gr.Tab(label="Restart"):
                     self.gr_restart_bttn.render()
+
                 with gr.Tab(label = "Print"):
                     gr.Text(value="Prints all components reachable, to console")
                     self.pprint_button.render()
+
                 with gr.Tab(label="Info"):
                     gr.TextArea(value="!!![THIS IS IN ALPHA]!!!\n\
 I WILL INTRODUCE SOME BREAKING CHANGES I recommend you tell all your favorite script composers\n\
