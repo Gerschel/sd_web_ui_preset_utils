@@ -6,16 +6,17 @@ import json
 import os
 from pprint import pprint
 from modules.ui import gr_show
+from collections import namedtuple
 
 BASEDIR = scripts.basedir()
 
 class Script(scripts.Script):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        #TODO: A user can check off which fields they don't want a component using
-        #TODO: Fix equal heights of row
-        #TODO: Reorganize for grabbing certain values in time
-        # ! It looks like I can do settings for any custom script, the issue is script load order
+
+        self.comptuple = namedtuple("CompTuple", ["component", "label", "elem_id", "kwargs"])
+        self.all_components = []
+
         self.available_components = [
             "Sampling Steps",
             "Sampling method",
@@ -40,40 +41,45 @@ class Script(scripts.Script):
 
 
 
-        self.component_map = {k: None for k in self.available_components}
+
+
         self.settings_file = "preset_configuration.json"
+        self.additional_settings_file = "additional_components.json"
 
 
-
-        self.save_as = gr.Text(render=False, label="Quick Save")
-        self.save_button = gr.Button(value="Save", variant="secondary", render=False, visible=False)
-
-
-        self.all_components_and_elem_ids = []
-
-        #Load config from file
         self.all_presets = self.get_config(self.settings_file)
+        self.additional_components_for_presets = self.get_config(self.additional_settings_file) #additionalComponents
+
+
+        self.component_map = {k: None for k in self.available_components}
+        self.additional_components_map = {k:None for k in self.additional_components_for_presets["additionalComponents"]}
+        self.additional_components = [x for x in self.additional_components_map] # acts like available_components list for additional components
+
+        #combine
+        self.component_map = {**self.component_map, **self.additional_components_map}
+        self.available_components = self.available_components + self.additional_components
+
+
+
+        # UI elements
+        # quick set tab
         self.preset_dropdown = gr.Dropdown(
             label="Presets",
             choices=list(self.all_presets.keys()),
             render = False
             )
 
-        self.additional_settings_file = "additional_components.json"
-        self.additional_components_for_presets = self.get_config(self.additional_settings_file) #additionalComponents
-        self.additional_components_map = {k:None for k in self.additional_components_for_presets["additionalComponents"]}
-        self.additional_components = [x for x in self.additional_components_map]
+        self.save_as = gr.Text(render=False, label="Quick Save")
+        self.save_button = gr.Button(value="Save", variant="secondary", render=False, visible=False)
 
-        self.component_map = {**self.component_map, **self.additional_components_map}
-        self.available_components = self.available_components + self.additional_components
-        
+
+        # Restart tab
         self.gr_restart_bttn = gr.Button(value="Restart", variant="primary", render=False)
 
-        # Helper button to print component map
-        self.pprint_button = gr.Button(value="Print", render = False)
 
-        #! eval warning
-        #self.eval_text = gr.Text(render=False, label="!EVAL!")
+        # Print tab
+        self.pprint_button = gr.Button(value="Print", render = False)         # Helper button to print component map
+
 
     def title(self):
         return "Presets"
@@ -111,13 +117,19 @@ Current usage to add your scripts to settings. Open additional_components.json a
 and element id, in json format.\n\
 A goal of this script is to manage presets for ALL scripts, with choices of customization of what each preset affects.")
 
-                #with gr.Tab(label="!EVAL!"):
-                #    self.eval_text.render()
 
 
     def after_component(self, component, **kwargs):
         if hasattr(component, "label") or hasattr(component, "elem_id"):
-            self.all_components_and_elem_ids.append({f"label - {component.label} # elem_id - {component.elem_id}" if hasattr(component, "label") and hasattr(component, "elem_id") else f" label {component.label}" if hasattr(component, "label") else f"# elem_id{component.elem_id}" : kwargs})
+            self.all_components.append(self.comptuple(
+                                                      component=component,
+                                                      label=component.label if hasattr(component, "label") else None,
+                                                      elem_id=component.elem_id if hasattr(component, "elem_id") else None,
+                                                      kwargs=kwargs
+                                                     )
+                                      )
+                
+                
         label = kwargs.get("label")
         ele = kwargs.get("elem_id")
         # TODO: element id
@@ -149,13 +161,9 @@ A goal of this script is to manage presets for ALL scripts, with choices of cust
         self.gr_restart_bttn.click(fn=self.local_request_restart, _js='restart_reload', inputs=[], outputs=[])
 
         self.pprint_button.click(
-            fn = lambda: pprint(self.all_components_and_elem_ids),
+            fn = lambda: pprint([x._asdict() for x in self.all_components]),
         )
 
-       # self.eval_text.submit(
-       #     fn = lambda x : pprint(eval(x)),
-       #     inputs=self.eval_text
-       # )
 
     def run(self, p, *args):
         pass
@@ -176,39 +184,18 @@ A goal of this script is to manage presets for ALL scripts, with choices of cust
             """
             # Format new_setting from tuple of values, and map them to their label
             try:
-                # new_settings is a list of values from the inputs; new_settings[i] is the specific value
-                #if self.is_txt2img:
-                    return_dict = {}
-                    #new_setting = {k:new_setting[i] if k != "Sampling method" else modules.sd_samplers.samplers[new_setting[i]].name for i, k in enumerate(x for x in self.available_components if self.component_map[x] is not None)}
-                    #! TODO: This does not work with datasets or highlighted text that use the type of index
-                    for i,k in enumerate(x for x in self.component_map if self.component_map[x] is not None):
-                        if k != "Sampling method" and not hasattr(self.component_map[k], "type"):
-                            return_dict.update({k: new_setting[i]})
-                        elif k == "Sampling method":
-                            return_dict.update({k: modules.sd_samplers.samplers[new_setting[i]].name if self.is_txt2img else  modules.sd_samplers.samplers_for_img2img[new_setting[i]].name})
-                        elif self.component_map[k].type == "index":
-                            return_dict.update({k: self.component_map[k].choices[new_setting[i]]})
-                        else:
-                            return_dict.update({k: new_setting[i]})
-                    new_setting = return_dict
-
-                    #new_setting = {k:new_setting[i] if \
-                    #    k != "Sampling method" and not hasattr(self.component_map[k], "type") else modules.sd_samplers.samplers[new_setting[i]].name if \
-                    #    k == "Sampling method" else  new_setting[i] if \
-                    #    isinstance(self.component_map[k].type, str) else self.component_map[k].choices[new_setting[i]] \
-                    #    for i, k in enumerate(x for x in self.available_components if self.component_map[x] is not None)}
-                #else:
-                #    return_dict = {}
-                #    # NOTE: The only reason why I need to distinguish txt2img at this time, is for the available samplers
-                #    #new_setting = {k:new_setting[i] if k != "Sampling method" else modules.sd_samplers.samplers_for_img2img[new_setting[i]].name for i, k in enumerate(x for x in self.available_components if self.component_map[x])}
-                #    for i,k in enumerate(x for x in self.component_map if self.component_map[x] is not None):
-                #        if k != "Sampling method" and not hasattr(self.component_map[k], "type"):
-                #            return_dict.update({k: new_setting[i]})
-                #        elif k == "Sampling method":
-                #            return_dict.update({k: modules.sd_samplers.samplers_for_img2img[new_setting[i]].name})
-                #        else:
-                #            return_dict.update({k: self.component_map[k].choices[new_setting[i]]})
-                #    new_setting = return_dict
+                return_dict = {}
+                #! TODO: This does not work with datasets or highlighted text that use the type of index
+                for i,k in enumerate(x for x in self.component_map if self.component_map[x] is not None):
+                    if k != "Sampling method" and not hasattr(self.component_map[k], "type"):
+                        return_dict.update({k: new_setting[i]})
+                    elif k == "Sampling method":
+                        return_dict.update({k: modules.sd_samplers.samplers[new_setting[i]].name if self.is_txt2img else  modules.sd_samplers.samplers_for_img2img[new_setting[i]].name})
+                    elif self.component_map[k].type == "index":
+                        return_dict.update({k: self.component_map[k].choices[new_setting[i]]})
+                    else:
+                        return_dict.update({k: new_setting[i]})
+                new_setting = return_dict
 
 
             except IndexError as e:
