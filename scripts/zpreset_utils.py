@@ -78,8 +78,9 @@ class Script(scripts.Script):
 
 
         # Print tab
-        self.pprint_button = gr.Button(value="Print", render = False)         # Helper button to print component map
-
+        self.gather_button = gr.Button(value="Gather", render = False, variant="primary")         # Helper button to print component map
+        self.inspect_dd = gr.Dropdown(render = False, type="index", interactive=True)
+        self.inspect_ta = gr.TextArea(render=False)
 
     def title(self):
         return "Presets"
@@ -108,8 +109,9 @@ class Script(scripts.Script):
                     self.gr_restart_bttn.render()
 
                 with gr.Tab(label = "Print"):
-                    gr.Text(value="Prints all components reachable, to console")
-                    self.pprint_button.render()
+                    self.gather_button.render()
+                    self.inspect_dd.render()
+                    self.inspect_ta.render()
 
                 with gr.Tab(label="Info"):
                     gr.TextArea(value="!!![THIS IS IN ALPHA]!!!\n\
@@ -145,6 +147,7 @@ A goal of this script is to manage presets for ALL scripts, with choices of cust
 
     def ui(self, is_img2img):
 
+        # Quick Set Tab
         self.preset_dropdown.change(
             fn=self.fetch_valid_values_from_preset,
             show_progress=False,
@@ -163,11 +166,34 @@ A goal of this script is to manage presets for ALL scripts, with choices of cust
             inputs = self.save_as,
             outputs = self.save_button
         )
+
+        # Restart Tab
         self.gr_restart_bttn.click(fn=self.local_request_restart, _js='restart_reload', inputs=[], outputs=[])
 
-        self.pprint_button.click(
-            fn = lambda: pprint([x._asdict() for x in self.all_components]),
+        # Print/Inspect Tab
+        self.gather_button.click(
+            fn = self.f_b_syncer,
+            outputs=[self.inspect_dd, self.gather_button]
         )
+        self.inspect_dd.change(
+            fn = lambda x: self.inspection_formatter(x),
+            inputs = self.inspect_dd,
+            outputs = self.inspect_ta,
+        )
+
+    def f_b_syncer(self):
+        """
+        ?Front/Backend synchronizer?
+        Not knowing what else to call it, simple idea, rough to figure out. When updating choices on the front-end, back-end isn't updated, make them both match
+        https://github.com/gradio-app/gradio/discussions/2848
+        """
+        self.inspect_dd.choices = [str(x) for x in self.all_components]
+        return [gr.update(choices=[str(x) for x in self.all_components]), gr.Button.update(visible=False)]
+    
+    def inspection_formatter(self, x):
+        comp = self.all_components[x]
+        text = f"Component Label: {comp.label}\nElement ID: {comp.elem_id}\nComponent: {comp.component}\nAll Info Handed Down: {comp.kwargs}"
+        return text
 
 
     def run(self, p, *args):
