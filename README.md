@@ -1,6 +1,8 @@
 # sd_web_ui_preset_utils
 Release version of preset utilities
 
+Would you believe me if I told you I'm not a programmer, but a carpenter.
+
 To install: Go to settings tab of stable-diffusion-webui, go to install from url, paste in this url and click install:
 https://github.com/Gerschel/sd_web_ui_preset_utils
 
