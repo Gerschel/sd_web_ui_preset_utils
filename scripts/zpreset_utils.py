@@ -353,7 +353,8 @@ Length: {len(self.available_components)}\t keys: {self.available_components}")
             Fetches selected preset from dropdown choice and filters valid components from choosen preset
             non-valid components will still have None as the page didn't contain any
         """
-        return [self.all_presets[selection][comp_name] if comp_name in self.all_presets[selection] else self.component_map[comp_name].value for comp_name in list(x for x in self.available_components if self.component_map[x] is not None and hasattr(self.component_map[x], "value"))]
+        #        saved value                           if         in  selection                     and    (true if no choices type else true if value in choices else false (got to default))       else          default value
+        return [self.all_presets[selection][comp_name] if (comp_name in self.all_presets[selection] and (True if not hasattr(self.component_map, "choices") else True if self.all_presets[selection[comp_name]] in self.component_map[comp_name].get("choices", []) else False ) ) else self.component_map[comp_name].value for comp_name in list(x for x in self.available_components if self.component_map[x] is not None and hasattr(self.component_map[x], "value"))]
 
     def save_detailed_fetch_valid_values_from_preset(self, selection):
         """
