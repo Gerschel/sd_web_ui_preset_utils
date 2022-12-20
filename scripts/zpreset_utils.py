@@ -18,6 +18,8 @@ class Script(scripts.Script):
         self.all_components = []
 
         self.available_components = [
+            "Negative prompt",
+            "Prompt",
             "Sampling Steps",
             "Sampling method",
             "Width",
@@ -72,6 +74,18 @@ class Script(scripts.Script):
         self.save_as = gr.Text(render=False, label="Quick Save")
         self.save_button = gr.Button(value="Save", variant="secondary", render=False, visible=False)
 
+        # Detailed Save
+        self.save_detail_md = gr.Markdown(render=False, value="<center>NOT ALL COMPONENTS APPLY</center><center>Options are all options mixed between tabs, and additional you added in additional_components.py</center><center>Try adding 'Prompt' and 'Negative prompt' case sensitive to additional\
+            <center>Make your choices, adjust your settings, set a name, save. To edit a prior choice, select from dropdown and overwrite.</center>\
+                <center>To apply, go to quick set. New save is not immediately available in other tab without restart (tip, save extra names to overwrite to cheat this)</center>")
+        self.save_detailed_name_dropdown = gr.Dropdown(render=False, choices=self.preset_dropdown.choices, label="Presets")
+        self.save_detailed_as = gr.Text(render=False, label="Detailed Save")
+        self.save_detailed_button = gr.Button(value="Save", variant="primary", render=False, visible=False)
+        # ! TODO: Keep an eye out on this, could cause confusion, if it does, either go single checkboxes with others visible False, or
+        # Potential place to put this, in after_components elem_id txt_generation_info_button or img2img_generation_info button
+        self.save_detailed_checkbox_group = gr.CheckboxGroup(render=False, choices=self.available_components)
+
+
 
         # Restart tab
         self.gr_restart_bttn = gr.Button(value="Restart", variant="primary", render=False)
@@ -105,6 +119,18 @@ class Script(scripts.Script):
 
                 # TODO: create tab
                 # TODO: Edit tab
+                with gr.Tab(label="Detailed Save"):
+                    self.save_detail_md.render()
+                    with gr.Column(scale=1):
+                        with gr.Row():
+                            self.save_detailed_name_dropdown.render()
+                        with gr.Row():
+                            self.save_detailed_as.render()
+                            self.save_detailed_button.render()
+                    with gr.Column(scale=1):
+                        self.save_detailed_checkbox_group.render()
+                        
+
                 with gr.Tab(label="Restart"):
                     self.gr_restart_bttn.render()
 
@@ -150,21 +176,40 @@ A goal of this script is to manage presets for ALL scripts, with choices of cust
         # Quick Set Tab
         self.preset_dropdown.change(
             fn=self.fetch_valid_values_from_preset,
-            show_progress=False,
             inputs=[self.preset_dropdown],
-            outputs=[self.component_map[comp_name] for comp_name in list(x for x in self.available_components if self.component_map[x] is not None)]
+            outputs=[self.component_map[comp_name] for comp_name in list(x for x in self.available_components if self.component_map[x] is not None)],
             )
 
         self.save_button.click(
             fn = self.save_config(path=self.settings_file),
             inputs = [self.save_as] + [self.component_map[comp_name] for comp_name in list(x for x in self.available_components if self.component_map[x] is not None)],# if self.component_map[comp_name] is not None],
-            outputs = [self.save_as, self.preset_dropdown]
+            outputs = [self.save_as, self.preset_dropdown, self.save_detailed_name_dropdown]
         )
 
         self.save_as.change(
             fn = lambda x: gr.update(variant = "primary" if bool(x) else "secondary", visible = bool(x)),
             inputs = self.save_as,
             outputs = self.save_button
+        )
+
+        # Detailed save tab
+        self.save_detailed_name_dropdown.change(
+            fn = self.save_detailed_fetch_valid_values_from_preset,
+            inputs = [self.save_detailed_name_dropdown],
+            outputs = self.save_detailed_checkbox_group,
+        )
+
+        self.save_detailed_as.change(
+            fn = lambda x: gr.update(visible = bool(x)),
+            inputs = self.save_detailed_as,
+            outputs = self.save_detailed_button
+        )
+
+        self.save_detailed_button.click(
+            fn = self.save_detailed_config(path=self.settings_file),
+            # Potential issue
+            inputs = [self.save_detailed_as , self.save_detailed_checkbox_group] + [self.component_map[comp_name] for comp_name in list(x for x in self.available_components if self.component_map[x] is not None)],
+            outputs = [self.save_detailed_as, self.save_detailed_name_dropdown, self.preset_dropdown]
         )
 
         # Restart Tab
@@ -240,9 +285,58 @@ Length: {len(self.available_components)}\t keys: {self.available_components}")
             
             with open(file, "w") as f:
                 json.dump(self.all_presets, f, indent=4)
-            return [gr.update(value=""), gr.update(choices = list(self.all_presets.keys()))]
+            return [gr.update(value=""), gr.update(choices = list(self.all_presets.keys())), gr.update(choices = list(self.all_presets.keys()))]
         return func
         
+
+    def save_detailed_config(self, path):
+        """
+            Helper function to utilize closure
+        """
+
+        # closure keeps path in memory, it's a hack to get around how click or change expects values to be formatted
+        #! ME ************************************************************
+        def func(setting_name, *new_setting):
+            """
+                Formats setting and overwrites file
+                input: setting_name is text autoformatted from clicks input
+                       new_settings is a tuple (by using packing) of formatted text, outputs from
+                            click method must be in same order of labels
+            """
+            # Format new_setting from tuple of values, and map them to their label
+            checkbox_items = new_setting[0]
+            checkbox_items = [x for x in checkbox_items if x in list(x for x in self.available_components if self.component_map[x] is not None)]
+            items = [y for y in list(zip(new_setting[1:], list(x for x in self.component_map.items() if x[1] is not None))) if y[1][0] in checkbox_items]
+            #items[0] is value to save, items[1] is tuple, items[1][0] is key items[1][1] is component
+            try:
+                return_dict = {}
+                #! TODO: This does not work with datasets or highlighted text that use the type of index
+                for e in items:
+                    if e[1][0] != "Sampling method" and not hasattr(e[1][1], "type"):
+                        return_dict.update({e[1][0]: e[0]})
+                    elif e[1][0] == "Sampling method":
+                        return_dict.update({e[1][0]: modules.sd_samplers.samplers[e[0]].name if self.is_txt2img else  modules.sd_samplers.samplers_for_img2img[e[0]].name})
+                    elif e[1][1].type == "index":
+                        return_dict.update({e[1][0]: e[1][1].choices[e[0]]})
+                    else:
+                        return_dict.update({e[1][0]: e[0]})
+                new_setting = return_dict
+
+
+            except IndexError as e:
+                print(f"IndexError : {e}\n\
+Length: {len(new_setting)}\tvalue: {new_setting}\n\
+Length: {len(self.component_map)}\t keys: {list(self.component_map.keys())}\n\
+\tvalues: {list(self.component_map.values())}\n\
+Length: {len(self.available_components)}\t keys: {self.available_components}")
+            file = os.path.join(BASEDIR, path)
+            self.all_presets.update({setting_name : new_setting})
+            
+            with open(file, "w") as f:
+                json.dump(self.all_presets, f, indent=4)
+            return [gr.update(value=""), gr.update(choices = list(self.all_presets.keys())), gr.update(choices = list(self.all_presets.keys()))]
+        return func
+ 
         
     def get_config(self, path, open_mode='r'):
         file = os.path.join(BASEDIR, path)
@@ -260,6 +354,15 @@ Length: {len(self.available_components)}\t keys: {self.available_components}")
             non-valid components will still have None as the page didn't contain any
         """
         return [self.all_presets[selection][comp_name] if comp_name in self.all_presets[selection] else self.component_map[comp_name].value for comp_name in list(x for x in self.available_components if self.component_map[x] is not None and hasattr(self.component_map[x], "value"))]
+
+    def save_detailed_fetch_valid_values_from_preset(self, selection):
+        """
+            Fetches selected preset from dropdown choice and filters valid components from choosen preset
+            non-valid components will still have None as the page didn't contain any
+        """
+        return [ comp_name for comp_name in self.all_presets[selection] ]
+
+
 
 
     def local_request_restart(self):
