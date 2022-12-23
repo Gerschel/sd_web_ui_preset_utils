@@ -1,3 +1,4 @@
+/*
 #preset-util_ref_del_col_qs, #preset-util_ref_del_col_ds{
     min-width: unset !important;
     flex-grow: 0 !important;
@@ -15,6 +16,7 @@
     padding-right: 0.25em;
     margin: 0.1em 0;
 }
+*/
 
 #preset-util_save_qs_bttn, #preset-util_save_ds_bttn{
     min-height: 100% !important;

@@ -85,8 +85,6 @@ class Script(scripts.Script):
             elem_id=f"{self.elm_prfx}_preset_qs_dd"
             )
 
-        self.quick_set_refresh_button = gr.Button(value="🔄", render=False, elem_id=f"{self.elm_prfx}_ref_qs_bttn")
-        self.quick_set_delete_button = gr.Button(value="❌", render=False, elem_id=f"{self.elm_prfx}_del_qs_bttn")
 
         self.save_as = gr.Text(render=False, label="Quick Save", elem_id=f"{self.elm_prfx}_save_qs_txt")
         self.save_button = gr.Button(value="Save", variant="secondary", render=False, visible=False, elem_id=f"{self.elm_prfx}_save_qs_bttn")
@@ -96,8 +94,6 @@ class Script(scripts.Script):
             <center>Make your choices, adjust your settings, set a name, save. To edit a prior choice, select from dropdown and overwrite.</center>\
             <center>To apply, go to quick set. New save is not immediately available in other tab without restart (tip, save extra names to overwrite to cheat this)</center>", elem_id=f"{self.elm_prfx}_mess_qs_md")
         self.save_detailed_name_dropdown = gr.Dropdown(render=False, choices=self.preset_dropdown.choices, label="Presets", elem_id=f"{self.elm_prfx}_preset_ds_dd")
-        self.save_detailed_refresh_button = gr.Button(value="🔄", elem_id=f"{self.elm_prfx}_ref_ds_bttn")
-        self.save_detailed_delete_button = gr.Button(value="❌", render=False, elem_id=f"{self.elm_prfx}_del_ds_bttn")
         self.save_detailed_as = gr.Text(render=False, label="Detailed Save", elem_id=f"{self.elm_prfx}_save_ds_txt")
         self.save_detailed_button = gr.Button(value="Save", variant="primary", render=False, visible=False, elem_id=f"{self.elm_prfx}_save_ds_bttn")
         # ! TODO: Keep an eye out on this, could cause confusion, if it does, either go single checkboxes with others visible False, or ...
@@ -128,9 +124,6 @@ class Script(scripts.Script):
                 with gr.Tab(label="Quick Set"):
                     with gr.Row(equal_height = True):
                         self.preset_dropdown.render()
-                        with gr.Column(scale=1, elem_id = f"{self.elm_prfx}_ref_del_col_qs"):
-                            self.quick_set_refresh_button.render()
-                            self.quick_set_delete_button.render()
 
                     with gr.Row():
                         with gr.Column(scale=12):
@@ -145,10 +138,6 @@ class Script(scripts.Script):
                     with gr.Column(scale=1):
                         with gr.Row(equal_height = True):
                             self.save_detailed_name_dropdown.render()
-                            with gr.Column(scale=1, elem_id = f"{self.elm_prfx}_ref_del_col_ds"):
-                                self.save_detailed_refresh_button.style(full_width=True)
-                                self.save_detailed_refresh_button.render()
-                                self.save_detailed_delete_button.render()
                                 
                         with gr.Row():
                             with gr.Column(scale=12):
@@ -219,17 +208,6 @@ A goal of this script is to manage presets for ALL scripts, with choices of cust
             fn = lambda x: gr.update(variant = "primary" if bool(x) else "secondary", visible = bool(x)),
             inputs = self.save_as,
             outputs = self.save_button
-        )
-
-        self.quick_set_refresh_button.click(
-            fn = lambda: self.get_config(self.settings_file, reload=True),
-            outputs=[self.preset_dropdown, self.save_detailed_name_dropdown]
-        )
-
-        self.quick_set_delete_button.click(
-            fn = lambda x: self.delete_preset(x, self.settings_file),
-            inputs = self.preset_dropdown,
-            outputs = [self.preset_dropdown, self.save_detailed_name_dropdown]
         )
 
 
@@ -379,31 +357,16 @@ Length: {len(self.available_components)}\t keys: {self.available_components}")
         return func
  
         
-    def get_config(self, path, open_mode='r', reload=False):
+    def get_config(self, path, open_mode='r'):
         file = os.path.join(BASEDIR, path)
         try:
             with open(file, open_mode) as f:
                 as_dict:dict = json.load(f) 
         except FileNotFoundError as e:
             print(f"{e}\n{file} not found, check if it exists or if you have moved it.")
-        if not reload:
-            return as_dict 
-        else:
-            print(self.preset_dropdown.choices)
-            print(as_dict)
-            print(self.all_presets)
-            self.all_presets.update(**as_dict)
-            self.preset_dropdown.choices = list(as_dict.keys())
-            return gr.update(choices = list(self.all_presets.keys()))
+        return as_dict 
     
 
-    def delete_preset(self, selection, filepath):
-        self.all_presets.pop(selection)
-        with open(filepath, 'w') as f:
-            json.dump(self.all_presets, f, indent=4)
-        return [gr.update(choices = list(self.all_presets.keys())), gr.update(choices = list(self.all_presets.keys()))] 
-
-        
     def fetch_valid_values_from_preset(self, selection):
         print(selection)
         """
