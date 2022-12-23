@@ -1,3 +1,5 @@
+
+
 import gradio as gr
 import modules.sd_samplers
 import modules.scripts as scripts
@@ -10,6 +12,15 @@ from collections import namedtuple
 
 BASEDIR = scripts.basedir()
 
+#https://github.com/Zyin055 steals my code I did not contribute to use, or give permission to use, because I helped one time, deletes issues I created about copyright theft, while Zyin055 wants to have copyright of theirs.
+#This person deleted evidence I posted on their repository when they stated they weren't. https://github.com/Zyin055/Config-Presets/blob/main/scripts/config_presets.py#L334
+#https://web.archive.org/web/20221222065632/https://github.com/Zyin055/Config-Presets/issues/12
+#https://web.archive.org/web/20221222065708/https://github.com/Zyin055/Config-Presets/issues/13
+#https://web.archive.org/web/20221222065656/https://github.com/Zyin055/Config-Presets/issues/14
+#https://web.archive.org/web/20221222071917/https://github.com/Zyin055/Config-Presets/pull/5
+# issue I posted issue 15, posted more evidence, but it didn't stick becasue I got blocked during submission
+# said I never asked about collaborating https://github.com/Zyin055/Config-Presets/pull/1#issuecomment-1348251660
+
 class Script(scripts.Script):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -17,6 +28,8 @@ class Script(scripts.Script):
         self.comptuple = namedtuple("CompTuple", ["component", "label", "elem_id", "kwargs"])
         self.all_components = []
 
+        #self.elm_prfx = f"{'txt2img' if self.is_txt2img else 'img2img'}"
+        self.elm_prfx = "preset-util"
         self.available_components = [
             "Negative prompt",
             "Prompt",
@@ -68,33 +81,39 @@ class Script(scripts.Script):
         self.preset_dropdown = gr.Dropdown(
             label="Presets",
             choices=list(self.all_presets.keys()),
-            render = False
+            render = False,
+            elem_id=f"{self.elm_prfx}_preset_qs_dd"
             )
 
-        self.save_as = gr.Text(render=False, label="Quick Save")
-        self.save_button = gr.Button(value="Save", variant="secondary", render=False, visible=False)
+        self.quick_set_refresh_button = gr.Button(value="🔄", render=False, elem_id=f"{self.elm_prfx}_ref_qs_bttn")
+        self.quick_set_delete_button = gr.Button(value="❌", render=False, elem_id=f"{self.elm_prfx}_del_qs_bttn")
+
+        self.save_as = gr.Text(render=False, label="Quick Save", elem_id=f"{self.elm_prfx}_save_qs_txt")
+        self.save_button = gr.Button(value="Save", variant="secondary", render=False, visible=False, elem_id=f"{self.elm_prfx}_save_qs_bttn")
 
         # Detailed Save
-        self.save_detail_md = gr.Markdown(render=False, value="<center>NOT ALL COMPONENTS APPLY</center><center>Options are all options mixed between tabs, and additional you added in additional_components.py</center><center>Try adding 'Prompt' and 'Negative prompt' case sensitive to additional\
+        self.save_detail_md = gr.Markdown(render=False, value="<center>NOT ALL COMPONENTS APPLY</center><center>Options are all options mixed between tabs, and additional you added in additional_components.py</center>\
             <center>Make your choices, adjust your settings, set a name, save. To edit a prior choice, select from dropdown and overwrite.</center>\
-                <center>To apply, go to quick set. New save is not immediately available in other tab without restart (tip, save extra names to overwrite to cheat this)</center>")
-        self.save_detailed_name_dropdown = gr.Dropdown(render=False, choices=self.preset_dropdown.choices, label="Presets")
-        self.save_detailed_as = gr.Text(render=False, label="Detailed Save")
-        self.save_detailed_button = gr.Button(value="Save", variant="primary", render=False, visible=False)
-        # ! TODO: Keep an eye out on this, could cause confusion, if it does, either go single checkboxes with others visible False, or
+            <center>To apply, go to quick set. New save is not immediately available in other tab without restart (tip, save extra names to overwrite to cheat this)</center>", elem_id=f"{self.elm_prfx}_mess_qs_md")
+        self.save_detailed_name_dropdown = gr.Dropdown(render=False, choices=self.preset_dropdown.choices, label="Presets", elem_id=f"{self.elm_prfx}_preset_ds_dd")
+        self.save_detailed_refresh_button = gr.Button(value="🔄", elem_id=f"{self.elm_prfx}_ref_ds_bttn")
+        self.save_detailed_delete_button = gr.Button(value="❌", render=False, elem_id=f"{self.elm_prfx}_del_ds_bttn")
+        self.save_detailed_as = gr.Text(render=False, label="Detailed Save", elem_id=f"{self.elm_prfx}_save_ds_txt")
+        self.save_detailed_button = gr.Button(value="Save", variant="primary", render=False, visible=False, elem_id=f"{self.elm_prfx}_save_ds_bttn")
+        # ! TODO: Keep an eye out on this, could cause confusion, if it does, either go single checkboxes with others visible False, or ...
         # Potential place to put this, in after_components elem_id txt_generation_info_button or img2img_generation_info button
-        self.save_detailed_checkbox_group = gr.CheckboxGroup(render=False, choices=self.available_components)
+        self.save_detailed_checkbox_group = gr.CheckboxGroup(render=False, choices=self.available_components, elem_id=f"{self.elm_prfx}_select_ds_chckgrp")
 
 
 
         # Restart tab
-        self.gr_restart_bttn = gr.Button(value="Restart", variant="primary", render=False)
+        self.gr_restart_bttn = gr.Button(value="Restart", variant="primary", render=False, elem_id=f"{self.elm_prfx}_restart_bttn")
 
 
         # Print tab
-        self.gather_button = gr.Button(value="Gather", render = False, variant="primary")         # Helper button to print component map
-        self.inspect_dd = gr.Dropdown(render = False, type="index", interactive=True)
-        self.inspect_ta = gr.TextArea(render=False)
+        self.gather_button = gr.Button(value="Gather", render = False, variant="primary", elem_id=f"{self.elm_prfx}_gather_bttn")         # Helper button to print component map
+        self.inspect_dd = gr.Dropdown(render = False, type="index", interactive=True, elem_id=f"{self.elm_prfx}_inspect_dd")
+        self.inspect_ta = gr.TextArea(render=False, elem_id=f"{self.elm_prfx}_inspect_txt")
 
     def title(self):
         return "Presets"
@@ -107,14 +126,16 @@ class Script(scripts.Script):
         if kwargs.get("label") == "Sampling Steps":
             with gr.Accordion(label="Utils", open = False):
                 with gr.Tab(label="Quick Set"):
-                    with gr.Row():
+                    with gr.Row(equal_height = True):
                         self.preset_dropdown.render()
+                        with gr.Column(scale=1, elem_id = f"{self.elm_prfx}_ref_del_col_qs"):
+                            self.quick_set_refresh_button.render()
+                            self.quick_set_delete_button.render()
 
-                    with gr.Row(equal_height=True):
-                        #with gr.Column(scale=9, equal_height=True):
-                        self.save_as.render()
-
-                        with gr.Column(scale=1, equal_height=True):
+                    with gr.Row():
+                        with gr.Column(scale=12):
+                            self.save_as.render()
+                        with gr.Column(scale=1):
                             self.save_button.render()
 
                 # TODO: create tab
@@ -122,11 +143,19 @@ class Script(scripts.Script):
                 with gr.Tab(label="Detailed Save"):
                     self.save_detail_md.render()
                     with gr.Column(scale=1):
-                        with gr.Row():
+                        with gr.Row(equal_height = True):
                             self.save_detailed_name_dropdown.render()
+                            with gr.Column(scale=1, elem_id = f"{self.elm_prfx}_ref_del_col_ds"):
+                                self.save_detailed_refresh_button.style(full_width=True)
+                                self.save_detailed_refresh_button.render()
+                                self.save_detailed_delete_button.render()
+                                
                         with gr.Row():
-                            self.save_detailed_as.render()
-                            self.save_detailed_button.render()
+                            with gr.Column(scale=12):
+                                self.save_detailed_as.render()
+                            with gr.Column(scale=1):
+                                self.save_detailed_button.render()
+
                     with gr.Column(scale=1):
                         self.save_detailed_checkbox_group.render()
                         
@@ -191,6 +220,18 @@ A goal of this script is to manage presets for ALL scripts, with choices of cust
             inputs = self.save_as,
             outputs = self.save_button
         )
+
+        self.quick_set_refresh_button.click(
+            fn = lambda: self.get_config(self.settings_file, reload=True),
+            outputs=[self.preset_dropdown, self.save_detailed_name_dropdown]
+        )
+
+        self.quick_set_delete_button.click(
+            fn = lambda x: self.delete_preset(x, self.settings_file),
+            inputs = self.preset_dropdown,
+            outputs = [self.preset_dropdown, self.save_detailed_name_dropdown]
+        )
+
 
         # Detailed save tab
         self.save_detailed_name_dropdown.change(
@@ -338,17 +379,33 @@ Length: {len(self.available_components)}\t keys: {self.available_components}")
         return func
  
         
-    def get_config(self, path, open_mode='r'):
+    def get_config(self, path, open_mode='r', reload=False):
         file = os.path.join(BASEDIR, path)
         try:
             with open(file, open_mode) as f:
-                as_dict = json.load(f) 
+                as_dict:dict = json.load(f) 
         except FileNotFoundError as e:
             print(f"{e}\n{file} not found, check if it exists or if you have moved it.")
-        return as_dict 
+        if not reload:
+            return as_dict 
+        else:
+            print(self.preset_dropdown.choices)
+            print(as_dict)
+            print(self.all_presets)
+            self.all_presets.update(**as_dict)
+            self.preset_dropdown.choices = list(as_dict.keys())
+            return gr.update(choices = list(self.all_presets.keys()))
+    
 
+    def delete_preset(self, selection, filepath):
+        self.all_presets.pop(selection)
+        with open(filepath, 'w') as f:
+            json.dump(self.all_presets, f, indent=4)
+        return [gr.update(choices = list(self.all_presets.keys())), gr.update(choices = list(self.all_presets.keys()))] 
 
+        
     def fetch_valid_values_from_preset(self, selection):
+        print(selection)
         """
             Fetches selected preset from dropdown choice and filters valid components from choosen preset
             non-valid components will still have None as the page didn't contain any
