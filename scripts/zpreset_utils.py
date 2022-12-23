@@ -100,6 +100,21 @@ class Script(scripts.Script):
         self.inspect_ta = gr.TextArea(render=False, elem_id=f"{self.elm_prfx}_inspect_txt")
 
 
+        self.info_markdown = gr.Markdown(value="<center>!⚠! THIS IS IN ALPHA !⚠!</center>\n\
+<center>🐉 I WILL INTRODUCE SOME BREAKING CHANGES 🐉</center>\
+<center>🙏 Please recommend your favorite script composers to implement element id's 🙏</center>\n\
+<br>\
+<center>If they implement unique element id's, they can get support for presets without making their own</center>\
+<center>❗ I have not added element id support yet, there are more labels than id's ❗</center>\
+<br>\
+<center>❗❗But labels sometimes collide. I can't do 'Mask Blur' because it also matches 'Mask Blur' in scripts❗❗</center>\
+<center>Try adding a component label to additional_components.json with element id 'null' without quotes for None</center>\
+<br>\
+<center>I would like to support all custom scripts, but need script path/name/title, some distinguishing factor</center>\
+<center>through the kwargs in IOComponent_init 'after_compoenet' and 'before_component'</center>\
+<center><link>https://github.com/Gerschel/sd_web_ui_preset_utils</link></center>", render=False)
+
+
     def title(self):
         return "Presets"
 
@@ -143,15 +158,7 @@ class Script(scripts.Script):
                     self.inspect_ta.render()
 
                 with gr.Tab(label="Info"):
-                    gr.TextArea(value="!!![THIS IS IN ALPHA]!!!\n\
-I WILL INTRODUCE SOME BREAKING CHANGES I recommend you tell all your favorite script composers\n\
-to put an elem_id on all their components they want to have preset support for if they don't want\n\
-to have to make one for their script themselves. Currently it's in it's ugly state, there is no edit\n\
-there is no micromanaging settings, element id's not suppported yet (soon). There can be a collision\n\
-of names.\n\
-Current usage to add your scripts to settings. Open additional_components.json and add the \"label\"\n\
-and element id, in json format.\n\
-A goal of this script is to manage presets for ALL scripts, with choices of customization of what each preset affects.")
+                    self.info_markdown.render()
 
 
     def after_component(self, component, **kwargs):
