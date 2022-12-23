@@ -101,7 +101,7 @@ class Script(scripts.Script):
 
 
         self.info_markdown = gr.Markdown(value="<center>!⚠! THIS IS IN ALPHA !⚠!</center>\n\
-<center>🐉 I WILL INTRODUCE SOME BREAKING CHANGES 🐉</center>\
+<center>🐉 I WILL INTRODUCE SOME BREAKING CHANGES (I will try to avoid it) 🐉</center>\
 <center>🙏 Please recommend your favorite script composers to implement element id's 🙏</center>\n\
 <br>\
 <center>If they implement unique element id's, they can get support for presets without making their own</center>\
@@ -110,7 +110,7 @@ class Script(scripts.Script):
 <center>❗❗But labels sometimes collide. I can't do 'Mask Blur' because it also matches 'Mask Blur' in scripts❗❗</center>\
 <center>Try adding a component label to additional_components.json with element id 'null' without quotes for None</center>\
 <br>\
-<center>I would like to support all custom scripts, but need script path/name/title, some distinguishing factor</center>\
+<center><strong>I would like to support all custom scripts, but need script path/name/title, some distinguishing factor</strong></center>\
 <center>through the kwargs in IOComponent_init 'after_compoenet' and 'before_component'</center>\
 <center><link>https://github.com/Gerschel/sd_web_ui_preset_utils</link></center>", render=False)
 
