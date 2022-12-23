@@ -12,14 +12,6 @@ from collections import namedtuple
 
 BASEDIR = scripts.basedir()
 
-#https://github.com/Zyin055 steals my code I did not contribute to use, or give permission to use, because I helped one time, deletes issues I created about copyright theft, while Zyin055 wants to have copyright of theirs.
-#This person deleted evidence I posted on their repository when they stated they weren't. https://github.com/Zyin055/Config-Presets/blob/main/scripts/config_presets.py#L334
-#https://web.archive.org/web/20221222065632/https://github.com/Zyin055/Config-Presets/issues/12
-#https://web.archive.org/web/20221222065708/https://github.com/Zyin055/Config-Presets/issues/13
-#https://web.archive.org/web/20221222065656/https://github.com/Zyin055/Config-Presets/issues/14
-#https://web.archive.org/web/20221222071917/https://github.com/Zyin055/Config-Presets/pull/5
-# issue I posted issue 15, posted more evidence, but it didn't stick becasue I got blocked during submission
-# said I never asked about collaborating https://github.com/Zyin055/Config-Presets/pull/1#issuecomment-1348251660
 
 class Script(scripts.Script):
     def __init__(self, *args, **kwargs):
@@ -55,9 +47,6 @@ class Script(scripts.Script):
         ]
 
 
-
-
-
         self.settings_file = "preset_configuration.json"
         self.additional_settings_file = "additional_components.json"
 
@@ -85,9 +74,9 @@ class Script(scripts.Script):
             elem_id=f"{self.elm_prfx}_preset_qs_dd"
             )
 
-
         self.save_as = gr.Text(render=False, label="Quick Save", elem_id=f"{self.elm_prfx}_save_qs_txt")
         self.save_button = gr.Button(value="Save", variant="secondary", render=False, visible=False, elem_id=f"{self.elm_prfx}_save_qs_bttn")
+
 
         # Detailed Save
         self.save_detail_md = gr.Markdown(render=False, value="<center>NOT ALL COMPONENTS APPLY</center><center>Options are all options mixed between tabs, and additional you added in additional_components.py</center>\
@@ -101,7 +90,6 @@ class Script(scripts.Script):
         self.save_detailed_checkbox_group = gr.CheckboxGroup(render=False, choices=self.available_components, elem_id=f"{self.elm_prfx}_select_ds_chckgrp")
 
 
-
         # Restart tab
         self.gr_restart_bttn = gr.Button(value="Restart", variant="primary", render=False, elem_id=f"{self.elm_prfx}_restart_bttn")
 
@@ -110,6 +98,7 @@ class Script(scripts.Script):
         self.gather_button = gr.Button(value="Gather", render = False, variant="primary", elem_id=f"{self.elm_prfx}_gather_bttn")         # Helper button to print component map
         self.inspect_dd = gr.Dropdown(render = False, type="index", interactive=True, elem_id=f"{self.elm_prfx}_inspect_dd")
         self.inspect_ta = gr.TextArea(render=False, elem_id=f"{self.elm_prfx}_inspect_txt")
+
 
     def title(self):
         return "Presets"
@@ -124,7 +113,6 @@ class Script(scripts.Script):
                 with gr.Tab(label="Quick Set"):
                     with gr.Row(equal_height = True):
                         self.preset_dropdown.render()
-
                     with gr.Row():
                         with gr.Column(scale=12):
                             self.save_as.render()
@@ -138,16 +126,13 @@ class Script(scripts.Script):
                     with gr.Column(scale=1):
                         with gr.Row(equal_height = True):
                             self.save_detailed_name_dropdown.render()
-                                
                         with gr.Row():
                             with gr.Column(scale=12):
                                 self.save_detailed_as.render()
                             with gr.Column(scale=1):
                                 self.save_detailed_button.render()
-
                     with gr.Column(scale=1):
                         self.save_detailed_checkbox_group.render()
-                        
 
                 with gr.Tab(label="Restart"):
                     self.gr_restart_bttn.render()
@@ -169,7 +154,6 @@ and element id, in json format.\n\
 A goal of this script is to manage presets for ALL scripts, with choices of customization of what each preset affects.")
 
 
-
     def after_component(self, component, **kwargs):
         if hasattr(component, "label") or hasattr(component, "elem_id"):
             self.all_components.append(self.comptuple(
@@ -179,8 +163,6 @@ A goal of this script is to manage presets for ALL scripts, with choices of cust
                                                       kwargs=kwargs
                                                      )
                                       )
-                
-                
         label = kwargs.get("label")
         ele = kwargs.get("elem_id")
         # TODO: element id
@@ -209,7 +191,6 @@ A goal of this script is to manage presets for ALL scripts, with choices of cust
             inputs = self.save_as,
             outputs = self.save_button
         )
-
 
         # Detailed save tab
         self.save_detailed_name_dropdown.change(
@@ -245,6 +226,7 @@ A goal of this script is to manage presets for ALL scripts, with choices of cust
             outputs = self.inspect_ta,
         )
 
+
     def f_b_syncer(self):
         """
         ?Front/Backend synchronizer?
@@ -253,6 +235,7 @@ A goal of this script is to manage presets for ALL scripts, with choices of cust
         """
         self.inspect_dd.choices = [str(x) for x in self.all_components]
         return [gr.update(choices=[str(x) for x in self.all_components]), gr.Button.update(visible=False)]
+
     
     def inspection_formatter(self, x):
         comp = self.all_components[x]
@@ -268,7 +251,6 @@ A goal of this script is to manage presets for ALL scripts, with choices of cust
         """
             Helper function to utilize closure
         """
-
         # closure keeps path in memory, it's a hack to get around how click or change expects values to be formatted
         def func(setting_name, *new_setting):
             """
@@ -292,13 +274,13 @@ A goal of this script is to manage presets for ALL scripts, with choices of cust
                         return_dict.update({k: new_setting[i]})
                 new_setting = return_dict
 
-
             except IndexError as e:
                 print(f"IndexError : {e}\n\
 Length: {len(new_setting)}\tvalue: {new_setting}\n\
 Length: {len(self.component_map)}\t keys: {list(self.component_map.keys())}\n\
 \tvalues: {list(self.component_map.values())}\n\
 Length: {len(self.available_components)}\t keys: {self.available_components}")
+
             file = os.path.join(BASEDIR, path)
             self.all_presets.update({setting_name : new_setting})
             
@@ -312,7 +294,6 @@ Length: {len(self.available_components)}\t keys: {self.available_components}")
         """
             Helper function to utilize closure
         """
-
         # closure keeps path in memory, it's a hack to get around how click or change expects values to be formatted
         #! ME ************************************************************
         def func(setting_name, *new_setting):
@@ -341,13 +322,13 @@ Length: {len(self.available_components)}\t keys: {self.available_components}")
                         return_dict.update({e[1][0]: e[0]})
                 new_setting = return_dict
 
-
             except IndexError as e:
                 print(f"IndexError : {e}\n\
 Length: {len(new_setting)}\tvalue: {new_setting}\n\
 Length: {len(self.component_map)}\t keys: {list(self.component_map.keys())}\n\
 \tvalues: {list(self.component_map.values())}\n\
 Length: {len(self.available_components)}\t keys: {self.available_components}")
+
             file = os.path.join(BASEDIR, path)
             self.all_presets.update({setting_name : new_setting})
             
@@ -361,14 +342,13 @@ Length: {len(self.available_components)}\t keys: {self.available_components}")
         file = os.path.join(BASEDIR, path)
         try:
             with open(file, open_mode) as f:
-                as_dict:dict = json.load(f) 
+                as_dict = json.load(f) 
         except FileNotFoundError as e:
             print(f"{e}\n{file} not found, check if it exists or if you have moved it.")
         return as_dict 
     
 
     def fetch_valid_values_from_preset(self, selection):
-        print(selection)
         """
             Fetches selected preset from dropdown choice and filters valid components from choosen preset
             non-valid components will still have None as the page didn't contain any
@@ -382,9 +362,6 @@ Length: {len(self.available_components)}\t keys: {self.available_components}")
             non-valid components will still have None as the page didn't contain any
         """
         return [ comp_name for comp_name in self.all_presets[selection] ]
-
-
-
 
     def local_request_restart(self):
         "Restart button"
