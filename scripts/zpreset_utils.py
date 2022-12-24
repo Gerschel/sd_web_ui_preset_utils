@@ -113,15 +113,16 @@ class PresetUtil(scripts.Script):
 
 
         # Detailed Save
-        self.save_detail_md = gr.Markdown(render=False, value="<center>NOT ALL COMPONENTS APPLY</center><center>Options are all options mixed between tabs, and additional you added in additional_components.py</center>\
+        self.save_detail_md = gr.Markdown(render=False, value="<center>Options are all options hardcoded, and additional you added in additional_components.py</center>\
             <center>Make your choices, adjust your settings, set a name, save. To edit a prior choice, select from dropdown and overwrite.</center>\
-            <center>To apply, go to quick set. New save is not immediately available in other tab without restart (tip, save extra names to overwrite to cheat this)</center>", elem_id=f"{self.elm_prfx}_mess_qs_md")
-        self.save_detailed_as = gr.Text(render=False, label="Detailed Save", elem_id=f"{self.elm_prfx}_save_ds_txt")
+            <center>To apply, go to quick set. Save now works immediately in other tab without restart, filters out non-common between tabs.</center>", elem_id=f"{self.elm_prfx}_mess_qs_md")
+        self.save_detailed_as = gr.Text(render=False, label="Detailed Save As", elem_id=f"{self.elm_prfx}_save_ds_txt")
         self.save_detailed_button = gr.Button(value="Save", variant="primary", render=False, visible=False, elem_id=f"{self.elm_prfx}_save_ds_bttn")
-        # TODO: NEXT: can clean-up now after moving out of __init__()
+        # **********************************           NOTE  ********************************************
+        # NOTE: This fix uglified the code ui is now _ui, row created in before_component, stored in var, used in after_component
         # ! TODO: Keep an eye out on this, could cause confusion, if it does, either go single checkboxes with others visible False, or ...
         # Potential place to put this, in after_components elem_id txt_generation_info_button or img2img_generation_info button
-        self.save_detailed_checkbox_group = gr.CheckboxGroup(render=False, choices=self.available_components, elem_id=f"{self.elm_prfx}_select_ds_chckgrp")
+        #self.save_detailed_checkbox_group = gr.CheckboxGroup(render=False, choices=list(x for x in self.available_components if self.component_map[x] is not None), elem_id=f"{self.elm_prfx}_select_ds_chckgrp")
 
 
         # Restart tab
@@ -187,8 +188,9 @@ class PresetUtil(scripts.Script):
                                 self.save_detailed_as.render()
                             with gr.Column(scale=1):
                                 self.save_detailed_button.render()
-                    with gr.Column(scale=1):
-                        self.save_detailed_checkbox_group.render()
+                    with gr.Column(scale=1) as detailed_check:
+                        self.detailed_check = detailed_check
+                        #self.save_detailed_checkbox_group.render()
 
                 # Restart TAB
                 with gr.Tab(label="Restart"):
@@ -220,10 +222,20 @@ class PresetUtil(scripts.Script):
         #if label in self.component_map or label in self.additional_components_map:# and ele == self.additional_components["additionalComponents"]) or (ele == self.additional_components["additionalComponents"]):
         if label in self.component_map:# and ele == self.additional_components["additionalComponents"]) or (ele == self.additional_components["additionalComponents"]):
             self.component_map.update({component.label: component})
+        
 
+        if ele == "txt2img_generation_info_button" or ele == "img2img_generation_info_button":
+            self.save_detailed_checkbox_group = gr.CheckboxGroup(render=False, choices=list(x for x in self.available_components if self.component_map[x] is not None), elem_id=f"{self.elm_prfx}_select_ds_chckgrp")
+            with self.detailed_check:
+                self.save_detailed_checkbox_group.render()
+            self._ui()
 
-    def ui(self, is_img2img):
+    def ui(self, *args):
+        pass
 
+    def _ui(self):
+
+        
         # Quick Set Tab
         if self.is_txt2img:
             # Quick Set Tab
@@ -236,7 +248,7 @@ class PresetUtil(scripts.Script):
             PresetUtil.txt2img_save_detailed_name_dropdown.change(
                 fn = self.save_detailed_fetch_valid_values_from_preset,
                 inputs = [PresetUtil.txt2img_save_detailed_name_dropdown],
-                outputs = self.save_detailed_checkbox_group,
+                outputs = [self.save_detailed_checkbox_group, self.save_detailed_as],
             )
         else:
             # Quick Set Tab
@@ -249,7 +261,7 @@ class PresetUtil(scripts.Script):
             PresetUtil.img2img_save_detailed_name_dropdown.change(
                 fn = self.save_detailed_fetch_valid_values_from_preset,
                 inputs = [PresetUtil.img2img_save_detailed_name_dropdown],
-                outputs = self.save_detailed_checkbox_group,
+                outputs = [self.save_detailed_checkbox_group, self.save_detailed_as],
             )
 
         #Mixed Level
@@ -435,7 +447,7 @@ Length: {len(self.available_components)}\t keys: {self.available_components}")
             Fetches selected preset from dropdown choice and filters valid components from choosen preset
             non-valid components will still have None as the page didn't contain any
         """
-        return [ comp_name for comp_name in PresetUtil.all_presets[selection] ]
+        return [[ comp_name for comp_name in PresetUtil.all_presets[selection] ], gr.update(value = selection)]
 
     def local_request_restart(self):
         "Restart button"
