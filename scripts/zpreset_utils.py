@@ -10,18 +10,20 @@ from pprint import pprint
 from modules.ui import gr_show
 from collections import namedtuple
 
-BASEDIR = scripts.basedir()
 
 
-class Script(scripts.Script):
+class PresetUtil(scripts.Script):
+
+    BASEDIR = scripts.basedir()
+
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        self.compinfo = namedtuple("CompInfo", ["component", "label", "elem_id", "kwargs"])
 
-        self.comptuple = namedtuple("CompTuple", ["component", "label", "elem_id", "kwargs"])
-        self.all_components = []
+        self.settings_file = "preset_configuration.json"
+        self.additional_settings_file = "additional_components.json"
 
-        #self.elm_prfx = f"{'txt2img' if self.is_txt2img else 'img2img'}"
-        self.elm_prfx = "preset-util"
+
+        self.additional_components_for_presets = self.get_config(self.additional_settings_file) #additionalComponents
         self.available_components = [
             "Negative prompt",
             "Prompt",
@@ -46,34 +48,66 @@ class Script(scripts.Script):
             "CFG Scale",
         ]
 
+        # components that pass through after_components
+        self.all_components = []
+ 
+        # Read saved settings
+        PresetUtil.all_presets = self.get_config(self.settings_file)
 
-        self.settings_file = "preset_configuration.json"
-        self.additional_settings_file = "additional_components.json"
-
-
-        self.all_presets = self.get_config(self.settings_file)
-        self.additional_components_for_presets = self.get_config(self.additional_settings_file) #additionalComponents
-
-
+        # Initialize
         self.component_map = {k: None for k in self.available_components}
         self.additional_components_map = {k:None for k in self.additional_components_for_presets["additionalComponents"]}
         self.additional_components = [x for x in self.additional_components_map] # acts like available_components list for additional components
 
-        #combine
+        # combine defaults and choices
         self.component_map = {**self.component_map, **self.additional_components_map}
         self.available_components = self.available_components + self.additional_components
 
 
+    
+    def fakeinit(self, *args, **kwargs):
+        """
+        __init__ workaround, since some data is not available during instantiation, such as is_img2img, filename, etc.
+        This method is called from .show(), as that's the first method ScriptRunner calls after handing some state dat (is_txt2img, is_img2img2)
+        """
+        #self.elm_prfx = f"{'txt2img' if self.is_txt2img else 'img2img'}"
+        self.elm_prfx = "preset-util"
+
 
         # UI elements
-        # quick set tab
-        self.preset_dropdown = gr.Dropdown(
-            label="Presets",
-            choices=list(self.all_presets.keys()),
-            render = False,
-            elem_id=f"{self.elm_prfx}_preset_qs_dd"
+        # class level
+        # NOTE: Would love to use one component rendered twice, but gradio does not allow rendering twice, so I need one per page
+        if self.is_txt2img:
+            # quick set tab
+            PresetUtil.txt2img_preset_dropdown = gr.Dropdown(
+                label="Presets",
+                choices=list(PresetUtil.all_presets.keys()),
+                render = False,
+                elem_id=f"{self.elm_prfx}_preset_qs_dd"
+            )
+            # Detailed Save
+            PresetUtil.txt2img_save_detailed_name_dropdown = gr.Dropdown(render=False,
+                choices=PresetUtil.txt2img_preset_dropdown.choices,
+                label="Presets",
+                elem_id=f"{self.elm_prfx}_preset_ds_dd"
+            )
+            #else:
+            # quick set tab
+            PresetUtil.img2img_preset_dropdown = gr.Dropdown(
+                label="Presets",
+                choices=list(PresetUtil.all_presets.keys()),
+                render = False,
+                elem_id=f"{self.elm_prfx}_preset_qs_dd"
+            )
+            # Detailed Save
+            PresetUtil.img2img_save_detailed_name_dropdown = gr.Dropdown(render=False,
+                choices=PresetUtil.img2img_preset_dropdown.choices,
+                label="Presets",
+                elem_id=f"{self.elm_prfx}_preset_ds_dd"
             )
 
+        # instance level
+        # quick set tab
         self.save_as = gr.Text(render=False, label="Quick Save", elem_id=f"{self.elm_prfx}_save_qs_txt")
         self.save_button = gr.Button(value="Save", variant="secondary", render=False, visible=False, elem_id=f"{self.elm_prfx}_save_qs_bttn")
 
@@ -82,9 +116,9 @@ class Script(scripts.Script):
         self.save_detail_md = gr.Markdown(render=False, value="<center>NOT ALL COMPONENTS APPLY</center><center>Options are all options mixed between tabs, and additional you added in additional_components.py</center>\
             <center>Make your choices, adjust your settings, set a name, save. To edit a prior choice, select from dropdown and overwrite.</center>\
             <center>To apply, go to quick set. New save is not immediately available in other tab without restart (tip, save extra names to overwrite to cheat this)</center>", elem_id=f"{self.elm_prfx}_mess_qs_md")
-        self.save_detailed_name_dropdown = gr.Dropdown(render=False, choices=self.preset_dropdown.choices, label="Presets", elem_id=f"{self.elm_prfx}_preset_ds_dd")
         self.save_detailed_as = gr.Text(render=False, label="Detailed Save", elem_id=f"{self.elm_prfx}_save_ds_txt")
         self.save_detailed_button = gr.Button(value="Save", variant="primary", render=False, visible=False, elem_id=f"{self.elm_prfx}_save_ds_bttn")
+        # TODO: NEXT: can clean-up now after moving out of __init__()
         # ! TODO: Keep an eye out on this, could cause confusion, if it does, either go single checkboxes with others visible False, or ...
         # Potential place to put this, in after_components elem_id txt_generation_info_button or img2img_generation_info button
         self.save_detailed_checkbox_group = gr.CheckboxGroup(render=False, choices=self.available_components, elem_id=f"{self.elm_prfx}_select_ds_chckgrp")
@@ -104,28 +138,35 @@ class Script(scripts.Script):
         return "Presets"
 
     def show(self, is_img2img):
+        self.fakeinit()
         return True
 
     def before_component(self, component, **kwargs):
         # Define location of where to show up
         if kwargs.get("label") == "Sampling Steps":
             with gr.Accordion(label="Utils", open = False):
+                # Quick TAB
                 with gr.Tab(label="Quick Set"):
                     with gr.Row(equal_height = True):
-                        self.preset_dropdown.render()
+                        if self.is_txt2img:
+                            PresetUtil.txt2img_preset_dropdown.render()
+                        else:
+                            PresetUtil.img2img_preset_dropdown.render()
                     with gr.Row():
                         with gr.Column(scale=12):
                             self.save_as.render()
                         with gr.Column(scale=1):
                             self.save_button.render()
 
-                # TODO: create tab
-                # TODO: Edit tab
+                # Detailed Save TAB
                 with gr.Tab(label="Detailed Save"):
                     self.save_detail_md.render()
                     with gr.Column(scale=1):
                         with gr.Row(equal_height = True):
-                            self.save_detailed_name_dropdown.render()
+                            if self.is_txt2img:
+                                PresetUtil.txt2img_save_detailed_name_dropdown.render()
+                            else:
+                                PresetUtil.img2img_save_detailed_name_dropdown.render()
                         with gr.Row():
                             with gr.Column(scale=12):
                                 self.save_detailed_as.render()
@@ -134,14 +175,17 @@ class Script(scripts.Script):
                     with gr.Column(scale=1):
                         self.save_detailed_checkbox_group.render()
 
+                # Restart TAB
                 with gr.Tab(label="Restart"):
                     self.gr_restart_bttn.render()
 
+                # Print TAB
                 with gr.Tab(label = "Print"):
                     self.gather_button.render()
                     self.inspect_dd.render()
                     self.inspect_ta.render()
 
+                # Info TAB
                 with gr.Tab(label="Info"):
                     gr.TextArea(value="!!![THIS IS IN ALPHA]!!!\n\
 I WILL INTRODUCE SOME BREAKING CHANGES I recommend you tell all your favorite script composers\n\
@@ -156,7 +200,7 @@ A goal of this script is to manage presets for ALL scripts, with choices of cust
 
     def after_component(self, component, **kwargs):
         if hasattr(component, "label") or hasattr(component, "elem_id"):
-            self.all_components.append(self.comptuple(
+            self.all_components.append(self.compinfo(
                                                       component=component,
                                                       label=component.label if hasattr(component, "label") else None,
                                                       elem_id=component.elem_id if hasattr(component, "elem_id") else None,
@@ -174,18 +218,53 @@ A goal of this script is to manage presets for ALL scripts, with choices of cust
     def ui(self, is_img2img):
 
         # Quick Set Tab
-        self.preset_dropdown.change(
-            fn=self.fetch_valid_values_from_preset,
-            inputs=[self.preset_dropdown],
-            outputs=[self.component_map[comp_name] for comp_name in list(x for x in self.available_components if self.component_map[x] is not None)],
+        if self.is_txt2img:
+            # Quick Set Tab
+            PresetUtil.txt2img_preset_dropdown.change(
+                fn=self.fetch_valid_values_from_preset,
+                inputs=[PresetUtil.txt2img_preset_dropdown],
+                outputs=[self.component_map[comp_name] for comp_name in list(x for x in self.available_components if self.component_map[x] is not None)],
+            )
+            # Detailed save tab
+            PresetUtil.txt2img_save_detailed_name_dropdown.change(
+                fn = self.save_detailed_fetch_valid_values_from_preset,
+                inputs = [PresetUtil.txt2img_save_detailed_name_dropdown],
+                outputs = self.save_detailed_checkbox_group,
+            )
+        else:
+            # Quick Set Tab
+            PresetUtil.img2img_preset_dropdown.change(
+                fn=self.fetch_valid_values_from_preset,
+                inputs=[PresetUtil.img2img_preset_dropdown],
+                outputs=[self.component_map[comp_name] for comp_name in list(x for x in self.available_components if self.component_map[x] is not None)],
+            )
+            # Detailed save tab
+            PresetUtil.img2img_save_detailed_name_dropdown.change(
+                fn = self.save_detailed_fetch_valid_values_from_preset,
+                inputs = [PresetUtil.img2img_save_detailed_name_dropdown],
+                outputs = self.save_detailed_checkbox_group,
             )
 
+        #Mixed Level
+        #QuickSet Tab
         self.save_button.click(
             fn = self.save_config(path=self.settings_file),
             inputs = [self.save_as] + [self.component_map[comp_name] for comp_name in list(x for x in self.available_components if self.component_map[x] is not None)],# if self.component_map[comp_name] is not None],
-            outputs = [self.save_as, self.preset_dropdown, self.save_detailed_name_dropdown]
+            outputs = [self.save_as, PresetUtil.txt2img_preset_dropdown, PresetUtil.img2img_preset_dropdown, PresetUtil.txt2img_save_detailed_name_dropdown, PresetUtil.img2img_save_detailed_name_dropdown]
+            #outputs = [self.save_as, self.preset_dropdown, self.save_detailed_name_dropdown]
+        )#Todo: class level components
+        #Detailed Tab
+        self.save_detailed_button.click(
+            fn = self.save_detailed_config(path=self.settings_file),
+            # Potential issue
+            inputs = [self.save_detailed_as , self.save_detailed_checkbox_group] + [self.component_map[comp_name] for comp_name in list(x for x in self.available_components if self.component_map[x] is not None)],
+            outputs = [self.save_detailed_as, PresetUtil.txt2img_save_detailed_name_dropdown, PresetUtil.img2img_save_detailed_name_dropdown, PresetUtil.txt2img_preset_dropdown, PresetUtil.img2img_preset_dropdown]
+            #outputs = [self.save_detailed_as, self.save_detailed_name_dropdown, self.preset_dropdown]
         )
 
+
+        #Instance level
+        #QuickSet Tab
         self.save_as.change(
             fn = lambda x: gr.update(variant = "primary" if bool(x) else "secondary", visible = bool(x)),
             inputs = self.save_as,
@@ -193,25 +272,11 @@ A goal of this script is to manage presets for ALL scripts, with choices of cust
         )
 
         # Detailed save tab
-        self.save_detailed_name_dropdown.change(
-            fn = self.save_detailed_fetch_valid_values_from_preset,
-            inputs = [self.save_detailed_name_dropdown],
-            outputs = self.save_detailed_checkbox_group,
-        )
-
         self.save_detailed_as.change(
             fn = lambda x: gr.update(visible = bool(x)),
             inputs = self.save_detailed_as,
             outputs = self.save_detailed_button
         )
-
-        self.save_detailed_button.click(
-            fn = self.save_detailed_config(path=self.settings_file),
-            # Potential issue
-            inputs = [self.save_detailed_as , self.save_detailed_checkbox_group] + [self.component_map[comp_name] for comp_name in list(x for x in self.available_components if self.component_map[x] is not None)],
-            outputs = [self.save_detailed_as, self.save_detailed_name_dropdown, self.preset_dropdown]
-        )
-
         # Restart Tab
         self.gr_restart_bttn.click(fn=self.local_request_restart, _js='restart_reload', inputs=[], outputs=[])
 
@@ -281,12 +346,13 @@ Length: {len(self.component_map)}\t keys: {list(self.component_map.keys())}\n\
 \tvalues: {list(self.component_map.values())}\n\
 Length: {len(self.available_components)}\t keys: {self.available_components}")
 
-            file = os.path.join(BASEDIR, path)
-            self.all_presets.update({setting_name : new_setting})
+            file = os.path.join(PresetUtil.BASEDIR, path)
+            PresetUtil.all_presets.update({setting_name : new_setting})
             
             with open(file, "w") as f:
-                json.dump(self.all_presets, f, indent=4)
-            return [gr.update(value=""), gr.update(choices = list(self.all_presets.keys())), gr.update(choices = list(self.all_presets.keys()))]
+                json.dump(PresetUtil.all_presets, f, indent=4)
+            #TODO: test [] + [] * 4
+            return [gr.update(value=""), gr.update(choices = list(PresetUtil.all_presets.keys())), gr.update(choices = list(PresetUtil.all_presets.keys())), gr.update(choices = list(PresetUtil.all_presets.keys())), gr.update(choices = list(PresetUtil.all_presets.keys()))]
         return func
         
 
@@ -329,17 +395,18 @@ Length: {len(self.component_map)}\t keys: {list(self.component_map.keys())}\n\
 \tvalues: {list(self.component_map.values())}\n\
 Length: {len(self.available_components)}\t keys: {self.available_components}")
 
-            file = os.path.join(BASEDIR, path)
-            self.all_presets.update({setting_name : new_setting})
+            file = os.path.join(PresetUtil.BASEDIR, path)
+            PresetUtil.all_presets.update({setting_name : new_setting})
             
             with open(file, "w") as f:
-                json.dump(self.all_presets, f, indent=4)
-            return [gr.update(value=""), gr.update(choices = list(self.all_presets.keys())), gr.update(choices = list(self.all_presets.keys()))]
+                json.dump(PresetUtil.all_presets, f, indent=4)
+            #return [gr.update(value=""), gr.update(choices = list(PresetUtil.all_presets.keys())), gr.update(choices = list(PresetUtil.all_presets.keys()))]
+            return [gr.update(value=""), gr.update(choices = list(PresetUtil.all_presets.keys())), gr.update(choices = list(PresetUtil.all_presets.keys())), gr.update(choices = list(PresetUtil.all_presets.keys())), gr.update(choices = list(PresetUtil.all_presets.keys()))]
         return func
  
         
     def get_config(self, path, open_mode='r'):
-        file = os.path.join(BASEDIR, path)
+        file = os.path.join(PresetUtil.BASEDIR, path)
         try:
             with open(file, open_mode) as f:
                 as_dict = json.load(f) 
@@ -354,14 +421,14 @@ Length: {len(self.available_components)}\t keys: {self.available_components}")
             non-valid components will still have None as the page didn't contain any
         """
         #        saved value                           if         in  selection                     and    (true if no choices type else true if value in choices else false (got to default))       else          default value
-        return [self.all_presets[selection][comp_name] if (comp_name in self.all_presets[selection] and (True if not hasattr(self.component_map, "choices") else True if self.all_presets[selection[comp_name]] in self.component_map[comp_name].get("choices", []) else False ) ) else self.component_map[comp_name].value for comp_name in list(x for x in self.available_components if self.component_map[x] is not None and hasattr(self.component_map[x], "value"))]
+        return [PresetUtil.all_presets[selection][comp_name] if (comp_name in PresetUtil.all_presets[selection] and (True if not hasattr(self.component_map, "choices") else True if PresetUtil.all_presets[selection[comp_name]] in self.component_map[comp_name].get("choices", []) else False ) ) else self.component_map[comp_name].value for comp_name in list(x for x in self.available_components if self.component_map[x] is not None and hasattr(self.component_map[x], "value"))]
 
     def save_detailed_fetch_valid_values_from_preset(self, selection):
         """
             Fetches selected preset from dropdown choice and filters valid components from choosen preset
             non-valid components will still have None as the page didn't contain any
         """
-        return [ comp_name for comp_name in self.all_presets[selection] ]
+        return [ comp_name for comp_name in PresetUtil.all_presets[selection] ]
 
     def local_request_restart(self):
         "Restart button"
