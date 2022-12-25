@@ -1,5 +1,9 @@
-# sd_web_ui_preset_utils
-Release version of preset utilities
+# Because the webui does a git reset --hard, your configs could be overwritten if you are updating. I have implemented a quick and dirty workaround
+That applies now and would avoid it on next update  
+The quick and dirty workaround will not apply on a soft restart, you will need to do a hard restart  
+New installs will face the same problem  
+
+I will rework this when I get a chance.
 
 Would you believe me if I told you I'm not a programmer, but a carpenter.
 
