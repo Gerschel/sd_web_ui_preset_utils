@@ -1,5 +1,3 @@
-
-
 import gradio as gr
 import modules.sd_samplers
 import modules.scripts as scripts
@@ -19,8 +17,10 @@ class PresetUtil(scripts.Script):
     def __init__(self, *args, **kwargs):
         self.compinfo = namedtuple("CompInfo", ["component", "label", "elem_id", "kwargs"])
 
-        self.settings_file = "preset_configuration.json"
-        self.additional_settings_file = "additional_components.json"
+        #self.settings_file = "preset_configuration.json"
+        self.settings_file = "presets.json"
+        #self.additional_settings_file = "additional_components.json"
+        self.additional_settings_file = "additional_configs.json"
 
 
         self.additional_components_for_presets = self.get_config(self.additional_settings_file) #additionalComponents
@@ -241,7 +241,7 @@ class PresetUtil(scripts.Script):
             # Quick Set Tab
             PresetUtil.txt2img_preset_dropdown.change(
                 fn=self.fetch_valid_values_from_preset,
-                inputs=[PresetUtil.txt2img_preset_dropdown],
+                inputs=[PresetUtil.txt2img_preset_dropdown] + [self.component_map[comp_name] for comp_name in list(x for x in self.available_components if self.component_map[x] is not None)],
                 outputs=[self.component_map[comp_name] for comp_name in list(x for x in self.available_components if self.component_map[x] is not None)],
             )
             # Detailed save tab
@@ -434,13 +434,13 @@ Length: {len(self.available_components)}\t keys: {self.available_components}")
         return as_dict 
     
 
-    def fetch_valid_values_from_preset(self, selection):
+    def fetch_valid_values_from_preset(self, selection, *comps_vals):
         """
             Fetches selected preset from dropdown choice and filters valid components from choosen preset
             non-valid components will still have None as the page didn't contain any
         """
         #        saved value                           if         in  selection                     and    (true if no choices type else true if value in choices else false (got to default))       else          default value
-        return [PresetUtil.all_presets[selection][comp_name] if (comp_name in PresetUtil.all_presets[selection] and (True if not hasattr(self.component_map, "choices") else True if PresetUtil.all_presets[selection[comp_name]] in self.component_map[comp_name].get("choices", []) else False ) ) else self.component_map[comp_name].value for comp_name in list(x for x in self.available_components if self.component_map[x] is not None and hasattr(self.component_map[x], "value"))]
+        return [PresetUtil.all_presets[selection][comp_name] if (comp_name in PresetUtil.all_presets[selection] and (True if not hasattr(self.component_map[comp_name], "choices") else True if PresetUtil.all_presets[selection[comp_name]] in self.component_map[comp_name].get("choices", []) else False ) ) else comps_vals[i] if not hasttr(self.component_map[comp_name], "choices") else self.component_map[comp_name].choices[comps_val[i]] for i, comp_name in enumerate(list(x for x in self.available_components if self.component_map[x] is not None and hasattr(self.component_map[x], "value")))]
 
     def save_detailed_fetch_valid_values_from_preset(self, selection):
         """
