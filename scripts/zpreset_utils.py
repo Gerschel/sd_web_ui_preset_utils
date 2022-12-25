@@ -109,11 +109,13 @@ class PresetManager(scripts.Script):
 
         # instance level
         # quick set tab
+        self.stackable_check = gr.Checkbox(value=True, label="[*] Stackable\n[ ] defaults for no val saved\nonly affects applying", elem_id=f"{self.elm_prfx}_stackable_check", render=False)
         self.save_as = gr.Text(render=False, label="Quick Save", elem_id=f"{self.elm_prfx}_save_qs_txt")
         self.save_button = gr.Button(value="Save", variant="secondary", render=False, visible=False, elem_id=f"{self.elm_prfx}_save_qs_bttn")
 
 
         # Detailed Save
+        self.stackable_check_det = gr.Checkbox(value=True, label="[*] Stackable\n[ ] defaults for no val saved\nonly affects applying", elem_id=f"{self.elm_prfx}_stackable_check_det", render=False)
         self.save_detail_md = gr.Markdown(render=False, value="<center>Options are all options hardcoded, and additional you added in additional_components.py</center>\
             <center>Make your choices, adjust your settings, set a name, save. To edit a prior choice, select from dropdown and overwrite.</center>\
             <center>To apply, go to quick set. Save now works immediately in other tab without restart, filters out non-common between tabs.</center>\
@@ -166,10 +168,13 @@ class PresetManager(scripts.Script):
                 # Quick TAB
                 with gr.Tab(label="Quick"):
                     with gr.Row(equal_height = True):
-                        if self.is_txt2img:
-                            PresetManager.txt2img_preset_dropdown.render()
-                        else:
-                            PresetManager.img2img_preset_dropdown.render()
+                        with gr.Column(scale=14):
+                            if self.is_txt2img:
+                                PresetManager.txt2img_preset_dropdown.render()
+                            else:
+                                PresetManager.img2img_preset_dropdown.render()
+                        with gr.Column(scale=1):
+                            self.stackable_check.render()
                     with gr.Row():
                         with gr.Column(scale=12):
                             self.save_as.render()
@@ -181,10 +186,13 @@ class PresetManager(scripts.Script):
                     self.save_detail_md.render()
                     with gr.Column(scale=1):
                         with gr.Row(equal_height = True):
-                            if self.is_txt2img:
-                                PresetManager.txt2img_save_detailed_name_dropdown.render()
-                            else:
-                                PresetManager.img2img_save_detailed_name_dropdown.render()
+                            with gr.Column(scale=14):
+                                if self.is_txt2img:
+                                    PresetManager.txt2img_save_detailed_name_dropdown.render()
+                                else:
+                                    PresetManager.img2img_save_detailed_name_dropdown.render()
+                            with gr.Column(scale=1):
+                                self.stackable_check_det.render()
                         with gr.Row():
                             with gr.Column(scale=12):
                                 self.save_detailed_as.render()
@@ -243,26 +251,26 @@ class PresetManager(scripts.Script):
             # Quick Set Tab
             PresetManager.txt2img_preset_dropdown.change(
                 fn=self.fetch_valid_values_from_preset,
-                inputs=[PresetManager.txt2img_preset_dropdown] + [self.component_map[comp_name] for comp_name in list(x for x in self.available_components if self.component_map[x] is not None)],
+                inputs=[self.stackable_check, PresetManager.txt2img_preset_dropdown] + [self.component_map[comp_name] for comp_name in list(x for x in self.available_components if self.component_map[x] is not None)],
                 outputs=[self.component_map[comp_name] for comp_name in list(x for x in self.available_components if self.component_map[x] is not None)],
             )
             # Detailed save tab
             PresetManager.txt2img_save_detailed_name_dropdown.change(
                 fn = self.save_detailed_fetch_valid_values_from_preset,
-                inputs = [PresetManager.txt2img_save_detailed_name_dropdown] + [self.component_map[comp_name] for comp_name in list(x for x in self.available_components if self.component_map[x] is not None)],
+                inputs = [self.stackable_check_det, PresetManager.txt2img_save_detailed_name_dropdown] + [self.component_map[comp_name] for comp_name in list(x for x in self.available_components if self.component_map[x] is not None)],
                 outputs = [self.save_detailed_checkbox_group, self.save_detailed_as] + [self.component_map[comp_name] for comp_name in list(x for x in self.available_components if self.component_map[x] is not None)],
             )
         else:
             # Quick Set Tab
             PresetManager.img2img_preset_dropdown.change(
                 fn=self.fetch_valid_values_from_preset,
-                inputs=[PresetManager.img2img_preset_dropdown] + [self.component_map[comp_name] for comp_name in list(x for x in self.available_components if self.component_map[x] is not None)],
+                inputs=[self.stackable_check, PresetManager.img2img_preset_dropdown] + [self.component_map[comp_name] for comp_name in list(x for x in self.available_components if self.component_map[x] is not None)],
                 outputs=[self.component_map[comp_name] for comp_name in list(x for x in self.available_components if self.component_map[x] is not None)],
             )
             # Detailed save tab
             PresetManager.img2img_save_detailed_name_dropdown.change(
                 fn = self.save_detailed_fetch_valid_values_from_preset,
-                inputs = [PresetManager.img2img_save_detailed_name_dropdown] + [self.component_map[comp_name] for comp_name in list(x for x in self.available_components if self.component_map[x] is not None)],
+                inputs = [self.stackable_check_det, PresetManager.img2img_save_detailed_name_dropdown] + [self.component_map[comp_name] for comp_name in list(x for x in self.available_components if self.component_map[x] is not None)],
                 outputs = [self.save_detailed_checkbox_group, self.save_detailed_as] + [self.component_map[comp_name] for comp_name in list(x for x in self.available_components if self.component_map[x] is not None)],
             )
 
@@ -436,34 +444,50 @@ Length: {len(self.available_components)}\t keys: {self.available_components}")
         return as_dict 
     
 
-    def fetch_valid_values_from_preset(self, selection, *comps_vals):
+    def fetch_valid_values_from_preset(self,stackable_flag,  selection, *comps_vals):
         """
             Fetches selected preset from dropdown choice and filters valid components from choosen preset
             non-valid components will still have None as the page didn't contain any
         """
-        #        saved value                           if         in  selection                     and    (true if no choices type else true if value in choices else false (got to default))       else          default value
-        return [
-            PresetManager.all_presets[selection][comp_name] 
-                if (comp_name in PresetManager.all_presets[selection] 
-                    and (
-                        True if not hasattr(self.component_map[comp_name], "choices") 
-                            else 
-                            True if PresetManager.all_presets[selection][comp_name] in self.component_map[comp_name].choices 
-                                 else False 
+        if stackable_flag:
+            #        saved value                           if         in  selection                     and    (true if no choices type else true if value in choices else false (got to default))       else          default value
+            return [
+                PresetManager.all_presets[selection][comp_name] 
+                    if (comp_name in PresetManager.all_presets[selection] 
+                        and (
+                            True if not hasattr(self.component_map[comp_name], "choices") 
+                                else 
+                                True if PresetManager.all_presets[selection][comp_name] in self.component_map[comp_name].choices 
+                                    else False 
+                            ) 
                         ) 
-                    ) 
-                else 
-                    comps_vals[i] 
-                    if not hasattr(self.component_map[comp_name], "choices") 
-                    else self.component_map[comp_name].choices[comps_vals[i]] 
-                for i, comp_name in enumerate(list(x for x in self.available_components if self.component_map[x] is not None and hasattr(self.component_map[x], "value")))]
+                    else 
+                        comps_vals[i] 
+                        if not hasattr(self.component_map[comp_name], "choices") 
+                        else self.component_map[comp_name].choices[comps_vals[i]] 
+                    for i, comp_name in enumerate(list(x for x in self.available_components if self.component_map[x] is not None and hasattr(self.component_map[x], "value")))]
+        else:
+            return [
+                PresetManager.all_presets[selection][comp_name] 
+                    if (comp_name in PresetManager.all_presets[selection] 
+                        and (
+                            True if not hasattr(self.component_map[comp_name], "choices") 
+                                else 
+                                True if PresetManager.all_presets[selection][comp_name] in self.component_map[comp_name].choices 
+                                    else False 
+                            ) 
+                        ) 
+                    else 
+                        self.component_map[comp_name].value
+                    for i, comp_name in enumerate(list(x for x in self.available_components if self.component_map[x] is not None and hasattr(self.component_map[x], "value")))]
+ 
 
-    def save_detailed_fetch_valid_values_from_preset(self, selection, *comps_vals):
+    def save_detailed_fetch_valid_values_from_preset(self, stackable_flag, selection, *comps_vals):
         """
             Fetches selected preset from dropdown choice and filters valid components from choosen preset
             non-valid components will still have None as the page didn't contain any
         """
-        return [[ comp_name for comp_name in PresetManager.all_presets[selection] ], gr.update(value = selection)] + self.fetch_valid_values_from_preset(selection, *comps_vals)
+        return [[ comp_name for comp_name in PresetManager.all_presets[selection] ], gr.update(value = selection)] + self.fetch_valid_values_from_preset(stackable_flag, selection, *comps_vals)
 
     def local_request_restart(self):
         "Restart button"
