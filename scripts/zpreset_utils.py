@@ -48,27 +48,27 @@ ______                   _    ___  ___
                                                          __/ |          
                                                         |___/           
 """)
-print(Fore.YELLOW + "By: Gerschel Payne")
-print(Style.RESET_ALL + "Preset Manager: Checking for pre-existing configuration files.")
+    print(Fore.YELLOW + "By: Gerschel Payne")
+    print(Style.RESET_ALL + "Preset Manager: Checking for pre-existing configuration files.")
 
-source_path = os.path.join(file_path, additional_config_source)
-target_path = os.path.join(file_path, additional_config_target)
-if not os.path.exists(target_path):
-    shutil.move(source_path, target_path)
-    print(f"Created: {additional_config_target}")
-else:
-    print(f"Not writing {additional_config_target}: config exists already")
+    source_path = os.path.join(file_path, additional_config_source)
+    target_path = os.path.join(file_path, additional_config_target)
+    if not os.path.exists(target_path):
+        shutil.move(source_path, target_path)
+        print(f"Created: {additional_config_target}")
+    else:
+        print(f"Not writing {additional_config_target}: config exists already")
                     
-source_path = os.path.join(file_path, presets_config_source)
-target_path = os.path.join(file_path, presets_config_target)
-if not os.path.exists(target_path):
-    shutil.move(source_path, target_path)
-    print(f"Created: {presets_config_target}")
-else:
-    print(f"Not writing {presets_config_target}: config exists already")
+    source_path = os.path.join(file_path, presets_config_source)
+    target_path = os.path.join(file_path, presets_config_target)
+    if not os.path.exists(target_path):
+        shutil.move(source_path, target_path)
+        print(f"Created: {presets_config_target}")
+    else:
+        print(f"Not writing {presets_config_target}: config exists already")
                     
                     
-os.remove(path_to_update_flag)
+    os.remove(path_to_update_flag)
 
 
 
