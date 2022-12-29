@@ -12,8 +12,6 @@ from pathlib import Path
 
 try:
     import launch
-    print("imported")
-
 
     if not launch.is_installed("colorama"):
             launch.run_pip("install colorama")
@@ -37,8 +35,9 @@ file_path = scripts.basedir() # file_path is basedir
 scripts_path = os.path.join(file_path, "scripts")
 path_to_update_flag = os.path.join(scripts_path, update_flag)
 if os.path.exists(path_to_update_flag):
-    print(Fore.CYAN + "Thank you for using:" + Fore.GREEN + "https://github.com/Gerschel/sd_web_ui_preset_utils/")
-    print(Fore.RED +"""
+    try:
+        print(Fore.CYAN + "Thank you for using:" + Fore.GREEN + "https://github.com/Gerschel/sd_web_ui_preset_utils/")
+        print(Fore.RED +"""
 ______                   _    ___  ___                                  
 | ___ \                 | |   |  \/  |                                  
 | |_/ / __ ___  ___  ___| |_  | .  . | __ _ _ __   __ _  __ _  ___ _ __ 
@@ -48,8 +47,23 @@ ______                   _    ___  ___
                                                          __/ |          
                                                         |___/           
 """)
-    print(Fore.YELLOW + "By: Gerschel Payne")
-    print(Style.RESET_ALL + "Preset Manager: Checking for pre-existing configuration files.")
+        print(Fore.YELLOW + "By: Gerschel Payne")
+        print(Style.RESET_ALL + "Preset Manager: Checking for pre-existing configuration files.")
+    except NameError:
+        print( "Thank you for using: https://github.com/Gerschel/sd_web_ui_preset_utils/")
+        print("""
+______                   _    ___  ___                                  
+| ___ \                 | |   |  \/  |                                  
+| |_/ / __ ___  ___  ___| |_  | .  . | __ _ _ __   __ _  __ _  ___ _ __ 
+|  __/ '__/ _ \/ __|/ _ \ __| | |\/| |/ _` | '_ \ / _` |/ _` |/ _ \ '__|
+| |  | | |  __/\__ \  __/ |_  | |  | | (_| | | | | (_| | (_| |  __/ |   
+\_|  |_|  \___||___/\___|\__| \_|  |_/\__,_|_| |_|\__,_|\__, |\___|_|   
+                                                         __/ |          
+                                                        |___/           
+""")
+        print("By: Gerschel Payne")
+        print("Preset Manager: Checking for pre-existing configuration files.")
+
 
     source_path = os.path.join(file_path, additional_config_source)
     target_path = os.path.join(file_path, additional_config_target)
