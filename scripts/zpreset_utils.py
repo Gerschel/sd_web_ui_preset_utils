@@ -239,8 +239,9 @@ class PresetManager(scripts.Script):
 
     def before_component(self, component, **kwargs):
         # Define location of where to show up
-        if kwargs.get("label") == "Sampling Steps":
-            with gr.Accordion(label="Preset Manager", open = False):
+        #if kwargs.get("elem_id") == "":#f"{'txt2img' if self.is_txt2img else 'img2img'}_progress_bar":
+        if kwargs.get("label") == "Sampling method":
+            with gr.Accordion(label="Preset Manager", open = False, elem_id="preset_manager_accordion"):
                 # Quick TAB
                 with gr.Tab(label="Quick"):
                     with gr.Row(equal_height = True):
@@ -294,6 +295,7 @@ class PresetManager(scripts.Script):
 
 
     def after_component(self, component, **kwargs):
+        #self._before_component(component, **kwargs)
         if hasattr(component, "label") or hasattr(component, "elem_id"):
             self.all_components.append(self.compinfo(
                                                       component=component,

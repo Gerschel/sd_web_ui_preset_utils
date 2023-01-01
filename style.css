@@ -21,6 +21,23 @@
 #preset-util_save_qs_bttn, #preset-util_save_ds_bttn{
     min-height: 100% !important;
 }
+
+@media (min-width: 708px){
+    #preset_manager_accordion{
+        min-width:45vw;
+    }
+}
+@media (max-width:707px){
+    
+    #preset_manager_accordion{
+        min-width: 90vw;
+    }
+}
+@media (max-width:679px){
+    #preset_manager_accordion{
+        min-width: 70vw;
+    }
+}
 /*
 #txt2img_ref_del_col_qs, #img2img_ref_del_col_qs, #txt2img_ref_del_col_ds, #img2img_ref_del_col_ds{
     min-width: unset !important;
