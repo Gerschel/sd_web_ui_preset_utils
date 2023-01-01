@@ -235,12 +235,16 @@ class PresetManager(scripts.Script):
 
     def show(self, is_img2img):
         self.fakeinit()
+        if shared.opts.samplers_in_dropdown:
+            self.before_component_label = "Sampling method"
+        else:
+            self.before_component_label = "Sampling Steps"
         return True
 
     def before_component(self, component, **kwargs):
         # Define location of where to show up
         #if kwargs.get("elem_id") == "":#f"{'txt2img' if self.is_txt2img else 'img2img'}_progress_bar":
-        if kwargs.get("label") == "Sampling method":
+        if kwargs.get("label") == self.before_component_label:
             with gr.Accordion(label="Preset Manager", open = False, elem_id="preset_manager_accordion"):
                 # Quick TAB
                 with gr.Tab(label="Quick"):
@@ -260,7 +264,8 @@ class PresetManager(scripts.Script):
 
                 # Detailed Save TAB
                 with gr.Tab(label="Detailed"):
-                    self.save_detail_md.render()
+                    with gr.Accordion(label="Basic info", open=False):
+                        self.save_detail_md.render()
                     with gr.Column(scale=1):
                         with gr.Row(equal_height = True):
                             with gr.Column(scale=14):
@@ -295,7 +300,6 @@ class PresetManager(scripts.Script):
 
 
     def after_component(self, component, **kwargs):
-        #self._before_component(component, **kwargs)
         if hasattr(component, "label") or hasattr(component, "elem_id"):
             self.all_components.append(self.compinfo(
                                                       component=component,
@@ -313,7 +317,7 @@ class PresetManager(scripts.Script):
         
 
         if ele == "txt2img_generation_info_button" or ele == "img2img_generation_info_button":
-            self.save_detailed_checkbox_group = gr.CheckboxGroup(render=False, choices=list(x for x in self.available_components if self.component_map[x] is not None), elem_id=f"{self.elm_prfx}_select_ds_chckgrp")
+            self.save_detailed_checkbox_group = gr.CheckboxGroup(render=False, choices=list(x for x in self.available_components if self.component_map[x] is not None), elem_id=f"{self.elm_prfx}_select_ds_chckgrp", label="This preset affects?")
             with self.detailed_check:
                 self.save_detailed_checkbox_group.render()
             self._ui()
