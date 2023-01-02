@@ -185,19 +185,21 @@ class PresetManager(scripts.Script):
 
         # instance level
         # quick set tab
-        self.stackable_check = gr.Checkbox(value=True, label="[*] Stackable\n[ ] defaults for no val saved\nonly affects applying", elem_id=f"{self.elm_prfx}_stackable_check", render=False)
+        self.stackable_check = gr.Checkbox(value=True, label="Stackable", elem_id=f"{self.elm_prfx}_stackable_check", render=False)
         self.save_as = gr.Text(render=False, label="Quick Save", elem_id=f"{self.elm_prfx}_save_qs_txt")
         self.save_button = gr.Button(value="Save", variant="secondary", render=False, visible=False, elem_id=f"{self.elm_prfx}_save_qs_bttn")
 
 
         # Detailed Save
-        self.stackable_check_det = gr.Checkbox(value=True, label="[*] Stackable\n[ ] defaults for no val saved\nonly affects applying", elem_id=f"{self.elm_prfx}_stackable_check_det", render=False)
+        self.stackable_check_det = gr.Checkbox(value=True, label="Stackable", elem_id=f"{self.elm_prfx}_stackable_check_det", render=False)
         self.save_detail_md = gr.Markdown(render=False, value="<center>Options are all options hardcoded, and additional you added in additional_components.py</center>\
             <center>Make your choices, adjust your settings, set a name, save. To edit a prior choice, select from dropdown and overwrite.</center>\
             <center>To apply, go to quick set. Save now works immediately in other tab without restart, filters out non-common between tabs.</center>\
-            <center>Settings stack. If it's not checked, it wont overwrite. Apply one, then another. Reset is old, update how you need.</center>", elem_id=f"{self.elm_prfx}_mess_qs_md")
+            <center>Settings stack. If it's not checked, it wont overwrite. Apply one, then another. Reset is old, update how you need.</center>\
+                <center>Stackable checkbox is not used for saves, it's used when making a selection from the dropdown, whether to apply as stackable or not</center>", elem_id=f"{self.elm_prfx}_mess_qs_md")
         self.save_detailed_as = gr.Text(render=False, label="Detailed Save As", elem_id=f"{self.elm_prfx}_save_ds_txt")
         self.save_detailed_button = gr.Button(value="Save", variant="primary", render=False, visible=False, elem_id=f"{self.elm_prfx}_save_ds_bttn")
+        self.save_detailed_delete_button = gr.Button(value="❌Delete", render=False, elem_id=f"{self.elm_prfx}_del_ds_bttn")
         # **********************************           NOTE  ********************************************
         # NOTE: This fix uglified the code ui is now _ui, row created in before_component, stored in var, used in after_component
         # ! TODO: Keep an eye out on this, could cause confusion, if it does, either go single checkboxes with others visible False, or ...
@@ -249,13 +251,12 @@ class PresetManager(scripts.Script):
                 # Quick TAB
                 with gr.Tab(label="Quick"):
                     with gr.Row(equal_height = True):
-                        with gr.Column(scale=14):
                             if self.is_txt2img:
                                 PresetManager.txt2img_preset_dropdown.render()
                             else:
                                 PresetManager.img2img_preset_dropdown.render()
-                        with gr.Column(scale=1):
-                            self.stackable_check.render()
+                            with gr.Column(elem_id=f"{self.elm_prfx}_ref_del_col_qs"):
+                                self.stackable_check.render()
                     with gr.Row():
                         with gr.Column(scale=12):
                             self.save_as.render()
@@ -268,12 +269,12 @@ class PresetManager(scripts.Script):
                         self.save_detail_md.render()
                     with gr.Column(scale=1):
                         with gr.Row(equal_height = True):
-                            with gr.Column(scale=14):
-                                if self.is_txt2img:
-                                    PresetManager.txt2img_save_detailed_name_dropdown.render()
-                                else:
-                                    PresetManager.img2img_save_detailed_name_dropdown.render()
-                            with gr.Column(scale=1):
+                            if self.is_txt2img:
+                                PresetManager.txt2img_save_detailed_name_dropdown.render()
+                            else:
+                                PresetManager.img2img_save_detailed_name_dropdown.render()
+                            with gr.Column(elem_id=f"{self.elm_prfx}_ref_del_col_ds"):
+                                self.save_detailed_delete_button.render()
                                 self.stackable_check_det.render()
                         with gr.Row():
                             with gr.Column(scale=12):
@@ -328,7 +329,7 @@ class PresetManager(scripts.Script):
     def _ui(self):
 
         
-        # Quick Set Tab
+        # Conditional for class members
         if self.is_txt2img:
             # Quick Set Tab
             PresetManager.txt2img_preset_dropdown.change(
@@ -356,7 +357,7 @@ class PresetManager(scripts.Script):
                 outputs = [self.save_detailed_checkbox_group, self.save_detailed_as] + [self.component_map[comp_name] for comp_name in list(x for x in self.available_components if self.component_map[x] is not None)],
             )
 
-        #Mixed Level
+        #Mixed Level use this section when needing to reference a class member for things that will affect both tabs
         #QuickSet Tab
         self.save_button.click(
             fn = self.save_config(path=self.settings_file),
@@ -371,6 +372,11 @@ class PresetManager(scripts.Script):
             inputs = [self.save_detailed_as , self.save_detailed_checkbox_group] + [self.component_map[comp_name] for comp_name in list(x for x in self.available_components if self.component_map[x] is not None)],
             outputs = [self.save_detailed_as, PresetManager.txt2img_save_detailed_name_dropdown, PresetManager.img2img_save_detailed_name_dropdown, PresetManager.txt2img_preset_dropdown, PresetManager.img2img_preset_dropdown]
             #outputs = [self.save_detailed_as, self.save_detailed_name_dropdown, self.preset_dropdown]
+        )
+        self.save_detailed_delete_button.click(
+            fn = lambda x: self.delete_preset(x, self.settings_file),
+            inputs = PresetManager.txt2img_save_detailed_name_dropdown if self.is_txt2img else PresetManager.img2img_save_detailed_name_dropdown,
+            outputs = [PresetManager.txt2img_preset_dropdown, PresetManager.img2img_preset_dropdown, PresetManager.txt2img_save_detailed_name_dropdown, PresetManager.img2img_save_detailed_name_dropdown]
         )
 
 
@@ -570,6 +576,17 @@ Length: {len(self.available_components)}\t keys: {self.available_components}")
             non-valid components will still have None as the page didn't contain any
         """
         return [[ comp_name for comp_name in PresetManager.all_presets[selection] ], gr.update(value = selection)] + self.fetch_valid_values_from_preset(stackable_flag, selection, *comps_vals)
+
+    def delete_preset(self, selection, filepath):
+        PresetManager.all_presets.pop(selection)
+        PresetManager.txt2img_preset_dropdown.choice = PresetManager.all_presets.keys()
+        PresetManager.img2img_preset_dropdown.choice = PresetManager.all_presets.keys()
+        PresetManager.txt2img_save_detailed_name_dropdown.choice = PresetManager.all_presets.keys()
+        PresetManager.img2img_save_detailed_name_dropdown.choice = PresetManager.all_presets.keys()
+        file = os.path.join(PresetManager.BASEDIR, filepath)
+        with open(file, 'w') as f:
+            json.dump(PresetManager.all_presets, f, indent=4)
+        return [gr.Dropdown.update(choices= list(PresetManager.all_presets.keys()), value=list(PresetManager.all_presets.keys())[0])] * 4
 
     def local_request_restart(self):
         "Restart button"
