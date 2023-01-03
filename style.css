@@ -42,18 +42,17 @@
 }
 
 @media (min-width: 708px){
-    #preset_manager_accordion{
-        min-width:45vw;
+    #txt2img_preset_manager_accordion, #img2img_preset_manager_accordion{
+        min-width:40vw;
     }
 }
 @media (max-width:707px){
-    
-    #preset_manager_accordion{
+    #txt2img_preset_manager_accordion, #img2img_preset_manager_accordion{
         min-width: 90vw;
     }
 }
 @media (max-width:679px){
-    #preset_manager_accordion{
+    #txt2img_preset_manager_accordion, #img2img_preset_manager_accordion{
         min-width: 70vw;
     }
 }

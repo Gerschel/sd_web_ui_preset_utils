@@ -91,6 +91,9 @@ class PresetManager(scripts.Script):
     BASEDIR = scripts.basedir()
 
     def __init__(self, *args, **kwargs):
+        self.ui_first = shared.opts.ui_reorder.split(",")[0].strip()
+        self.reorder_map = {"sampler": "Sampling method", "dimensions": "Width", "cfg": "CFG Scale", "seed": "Seed", "checkboxes": "Restore faces", "hires_fix": "Highres. fix", "batch": "Batch count", "scripts":"Script"}
+        self.positon_manager = self.reorder_map[self.ui_first]
         self.compinfo = namedtuple("CompInfo", ["component", "label", "elem_id", "kwargs"])
 
         #self.settings_file = "preset_configuration.json"
@@ -237,17 +240,22 @@ class PresetManager(scripts.Script):
 
     def show(self, is_img2img):
         self.fakeinit()
-        if shared.opts.samplers_in_dropdown:
-            self.before_component_label = "Sampling method"
+        if self.ui_first == "sampler":
+            if shared.opts.samplers_in_dropdown:
+                self.before_component_label = "Sampling method"
+            else:
+                self.before_component_label = "Sampling Steps"
+            return True
         else:
-            self.before_component_label = "Sampling Steps"
-        return True
+            self.before_component_label = self.positon_manager
+            return True
 
     def before_component(self, component, **kwargs):
         # Define location of where to show up
         #if kwargs.get("elem_id") == "":#f"{'txt2img' if self.is_txt2img else 'img2img'}_progress_bar":
+        #print(kwargs.get("label") == self.before_component_label, "TEST", kwargs.get("label"))
         if kwargs.get("label") == self.before_component_label:
-            with gr.Accordion(label="Preset Manager", open = False, elem_id="preset_manager_accordion"):
+            with gr.Accordion(label="Preset Manager", open = False, elem_id=f"{'txt2img' if self.is_txt2img else 'img2img'}_preset_manager_accordion"):
                 # Quick TAB
                 with gr.Tab(label="Quick"):
                     with gr.Row(equal_height = True):
@@ -578,7 +586,12 @@ Length: {len(self.available_components)}\t keys: {self.available_components}")
         return [[ comp_name for comp_name in PresetManager.all_presets[selection] ], gr.update(value = selection)] + self.fetch_valid_values_from_preset(stackable_flag, selection, *comps_vals)
 
     def delete_preset(self, selection, filepath):
+        """Delete preset from local memory and write file with it removed
+            filepath is not hardcoded so it can be used with other preset profiles if support gets added for loading additional presets from shares
+        """
+        #For writing and keeping front-end in sync with back-end
         PresetManager.all_presets.pop(selection)
+        #Keep front-end in sync with backend
         PresetManager.txt2img_preset_dropdown.choice = PresetManager.all_presets.keys()
         PresetManager.img2img_preset_dropdown.choice = PresetManager.all_presets.keys()
         PresetManager.txt2img_save_detailed_name_dropdown.choice = PresetManager.all_presets.keys()
