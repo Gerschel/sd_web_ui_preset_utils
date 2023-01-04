@@ -34,7 +34,9 @@ presets_config_target = "presets.json"
 file_path = scripts.basedir() # file_path is basedir
 scripts_path = os.path.join(file_path, "scripts")
 path_to_update_flag = os.path.join(scripts_path, update_flag)
+is_update_available = False
 if os.path.exists(path_to_update_flag):
+    is_update_available = True
     try:
         print(Fore.CYAN + "Thank you for using:" + Fore.GREEN + "https://github.com/Gerschel/sd_web_ui_preset_utils/")
         print(Fore.RED +"""
@@ -90,6 +92,18 @@ class PresetManager(scripts.Script):
 
     BASEDIR = scripts.basedir()
 
+    def update_config(self):
+        """This is a as per need method that will change per need"""
+        config = self.get_config(self.settings_file)
+        for preset in config.values():
+            if preset.get("Highres. fix", None) is not None:
+                print("updating preset")
+                preset["Hires. fix"] = preset.pop("Highres. fix")
+        
+        #PresetManager.all_presets = config
+        self.save_config(self.settings_file, config)
+
+
     def __init__(self, *args, **kwargs):
         self.ui_first = shared.opts.ui_reorder.split(",")[0].strip()
         self.reorder_map = {"sampler": "Sampling method", "dimensions": "Width", "cfg": "CFG Scale", "seed": "Seed", "checkboxes": "Restore faces", "hires_fix": "Highres. fix", "batch": "Batch count", "scripts":"Script"}
@@ -112,7 +126,9 @@ class PresetManager(scripts.Script):
             "Height",
             "Restore faces",
             "Tiling",
-            "Highres. fix",
+            "Hires. fix",
+            "Upscaler",
+            "Upscale by",
             "Seed",
             "Extra",
             "Variation seed",
@@ -127,6 +143,9 @@ class PresetManager(scripts.Script):
             "CFG Scale",
             "Script",
         ]
+        
+        if is_update_available:
+            self.update_config()
 
         # components that pass through after_components
         self.all_components = []
@@ -372,7 +391,7 @@ class PresetManager(scripts.Script):
         #Mixed Level use this section when needing to reference a class member for things that will affect both tabs
         #QuickSet Tab
         self.save_button.click(
-            fn = self.save_config(path=self.settings_file),
+            fn = self.wrapper_save_config(path=self.settings_file),
             inputs = [self.save_as] + [self.component_map[comp_name] for comp_name in list(x for x in self.available_components if self.component_map[x] is not None)],# if self.component_map[comp_name] is not None],
             outputs = [self.save_as, PresetManager.txt2img_preset_dropdown, PresetManager.img2img_preset_dropdown, PresetManager.txt2img_save_detailed_name_dropdown, PresetManager.img2img_save_detailed_name_dropdown]
             #outputs = [self.save_as, self.preset_dropdown, self.save_detailed_name_dropdown]
@@ -441,7 +460,7 @@ class PresetManager(scripts.Script):
         pass
 
 
-    def save_config(self, path):
+    def wrapper_save_config(self, path):
         """
             Helper function to utilize closure
         """
@@ -526,14 +545,22 @@ Length: {len(self.available_components)}\t keys: {self.available_components}")
 
             file = os.path.join(PresetManager.BASEDIR, path)
             PresetManager.all_presets.update({setting_name : new_setting})
-            
+            #TODO: replace with save method
             with open(file, "w") as f:
                 json.dump(PresetManager.all_presets, f, indent=4)
             #return [gr.update(value=""), gr.update(choices = list(PresetManager.all_presets.keys())), gr.update(choices = list(PresetManager.all_presets.keys()))]
             return [gr.update(value=""), gr.update(choices = list(PresetManager.all_presets.keys())), gr.update(choices = list(PresetManager.all_presets.keys())), gr.update(choices = list(PresetManager.all_presets.keys())), gr.update(choices = list(PresetManager.all_presets.keys()))]
         return func
  
-        
+    def save_config(self, path, data=None, open_mode='w'):
+        file = os.path.join(PresetManager.BASEDIR, path)
+        try:
+            with open(file, "w") as f:
+                json.dump(data if data else PresetManager.all_presets, f, indent=4)
+        except FileNotFoundError as e:
+            print(f"{e}\n{file} not found, check if it exists or if you have moved it.")
+
+
     def get_config(self, path, open_mode='r'):
         file = os.path.join(PresetManager.BASEDIR, path)
         try:
