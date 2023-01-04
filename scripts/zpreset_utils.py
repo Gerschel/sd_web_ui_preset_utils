@@ -240,6 +240,7 @@ class PresetManager(scripts.Script):
 
     def show(self, is_img2img):
         self.fakeinit()
+        return True
         if self.ui_first == "sampler":
             if shared.opts.samplers_in_dropdown:
                 self.before_component_label = "Sampling method"
@@ -251,10 +252,12 @@ class PresetManager(scripts.Script):
             return True
 
     def before_component(self, component, **kwargs):
+        pass
+    def _before_component(self, component, **kwargs):
         # Define location of where to show up
         #if kwargs.get("elem_id") == "":#f"{'txt2img' if self.is_txt2img else 'img2img'}_progress_bar":
         #print(kwargs.get("label") == self.before_component_label, "TEST", kwargs.get("label"))
-        if kwargs.get("label") == self.before_component_label:
+        #if kwargs.get("label") == self.before_component_label:
             with gr.Accordion(label="Preset Manager", open = False, elem_id=f"{'txt2img' if self.is_txt2img else 'img2img'}_preset_manager_accordion"):
                 # Quick TAB
                 with gr.Tab(label="Quick"):
@@ -326,6 +329,7 @@ class PresetManager(scripts.Script):
         
 
         if ele == "txt2img_generation_info_button" or ele == "img2img_generation_info_button":
+            self._before_component("")
             self.save_detailed_checkbox_group = gr.CheckboxGroup(render=False, choices=list(x for x in self.available_components if self.component_map[x] is not None), elem_id=f"{self.elm_prfx}_select_ds_chckgrp", label="This preset affects?")
             with self.detailed_check:
                 self.save_detailed_checkbox_group.render()

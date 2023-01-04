@@ -40,7 +40,7 @@
 #preset-util_save_qs_bttn, #preset-util_save_ds_bttn{
     min-height: 100% !important;
 }
-
+/*
 @media (min-width: 708px){
     #txt2img_preset_manager_accordion, #img2img_preset_manager_accordion{
         min-width:40vw;
@@ -56,6 +56,7 @@
         min-width: 70vw;
     }
 }
+*/
 /*
 #txt2img_ref_del_col_qs, #img2img_ref_del_col_qs, #txt2img_ref_del_col_ds, #img2img_ref_del_col_ds{
     min-width: unset !important;
