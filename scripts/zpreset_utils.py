@@ -97,7 +97,6 @@ class PresetManager(scripts.Script):
         config = self.get_config(self.settings_file)
         for preset in config.values():
             if preset.get("Highres. fix", None) is not None:
-                print("updating preset")
                 preset["Hires. fix"] = preset.pop("Highres. fix")
         
         #PresetManager.all_presets = config
@@ -127,8 +126,8 @@ class PresetManager(scripts.Script):
             "Restore faces",
             "Tiling",
             "Hires. fix",
-            "Upscaler",
-            "Upscale by",
+            #"Upscaler",
+            "Upscale by", #TODO
             "Seed",
             "Extra",
             "Variation seed",
