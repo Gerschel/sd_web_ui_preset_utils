@@ -92,13 +92,22 @@ class PresetManager(scripts.Script):
 
     BASEDIR = scripts.basedir()
 
+    def update_component_name(self, preset, oldval, newval):
+        if preset.get(oldval) is not None:
+            preset[newval] = preset.pop(oldval)
+
     def update_config(self):
         """This is a as per need method that will change per need"""
+        component_remap = {
+            "Highres. fix": "Hires. fix",
+            "Firstpass width": "Upscaler",
+            "Firstpass height": "Upscale by",
+            }
         config = self.get_config(self.settings_file)
         for preset in config.values():
-            if preset.get("Highres. fix", None) is not None:
-                preset["Hires. fix"] = preset.pop("Highres. fix")
-        
+            for old_val, new_val in component_remap.items():
+                self.update_component_name(preset, old_val, new_val)
+                    
         #PresetManager.all_presets = config
         self.save_config(self.settings_file, config)
 
@@ -125,17 +134,21 @@ class PresetManager(scripts.Script):
             "Height",
             "Restore faces",
             "Tiling",
-            "Hires. fix",
-            "Upscaler",
-            "Upscale by",
+            "Hires. fix",#new
+            "Highres. fix",#old
+            "Upscaler",#new
+            "Upscale by",#new
+            "Hires. steps",#New
+            "Resize width to",#New
+            "Resize height to",#New
             "Seed",
             "Extra",
             "Variation seed",
             "Variation strength",
             "Resize seed from width",
             "Resize seed from height",
-            "Firstpass width",
-            "Firstpass height",
+            "Firstpass width",#old now is upscaler
+            "Firstpass height",#old now is upscale by
             "Denoising strength",
             "Batch count",
             "Batch size",
