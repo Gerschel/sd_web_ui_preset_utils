@@ -126,8 +126,8 @@ class PresetManager(scripts.Script):
             "Restore faces",
             "Tiling",
             "Hires. fix",
-            #"Upscaler",
-            "Upscale by", #TODO
+            "Upscaler",
+            "Upscale by",
             "Seed",
             "Extra",
             "Variation seed",
@@ -591,6 +591,8 @@ Length: {len(self.available_components)}\t keys: {self.available_components}")
                         comps_vals[i] 
                         if not hasattr(self.component_map[comp_name], "choices") 
                         else self.component_map[comp_name].choices[comps_vals[i]] 
+                            if type(comps_vals[i]) == int 
+                            else self.component_map[comp_name].choices[self.component_map[comp_name].choices.index(comps_vals[i])]
                     for i, comp_name in enumerate(list(x for x in self.available_components if self.component_map[x] is not None and hasattr(self.component_map[x], "value")))]
         else:
             return [
