@@ -102,6 +102,7 @@ class PresetManager(scripts.Script):
             "Highres. fix": "Hires. fix",
             "Firstpass width": "Upscaler",
             "Firstpass height": "Upscale by",
+            "Sampling Steps": "Sampling steps"
             }
         config = self.get_config(self.settings_file)
         for preset in config.values():
