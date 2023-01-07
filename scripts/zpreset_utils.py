@@ -128,7 +128,7 @@ class PresetManager(scripts.Script):
         self.available_components = [
             "Prompt",
             "Negative prompt",
-            "Sampling Steps",
+            "Sampling steps",
             "Sampling method",
             "Width",
             "Height",
