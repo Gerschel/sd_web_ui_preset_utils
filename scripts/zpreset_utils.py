@@ -114,9 +114,7 @@ class PresetManager(scripts.Script):
 
 
     def __init__(self, *args, **kwargs):
-        self.ui_first = shared.opts.ui_reorder.split(",")[0].strip()
-        self.reorder_map = {"sampler": "Sampling method", "dimensions": "Width", "cfg": "CFG Scale", "seed": "Seed", "checkboxes": "Restore faces", "hires_fix": "Highres. fix", "batch": "Batch count", "scripts":"Script"}
-        self.positon_manager = self.reorder_map[self.ui_first]
+        
         self.compinfo = namedtuple("CompInfo", ["component", "label", "elem_id", "kwargs"])
 
         #self.settings_file = "preset_configuration.json"
