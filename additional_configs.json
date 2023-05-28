@@ -1,0 +1,21 @@
+{
+    "additionalComponents": 
+    {
+        "X Type" : "xyz_plot_x_type",
+        "Y Type" : "xyz_plot_y_type",
+        "Z Type" : "xyz_plot_z_type",
+        "X Values" : "xyz_plot_x_values",
+        "Y Values" : "xyz_plot_y_values",
+        "Z Values" : "xyz_plot_z_values",
+        "X type" : "x_type",
+        "Y type" : "y_type",
+        "X values" : "x_values",
+        "Y values" : "y_values",
+        "Z type" : "y_type",
+        "Z values" : "y_values",
+        "Draw legend" : "xyz_plot_draw_legend",
+        "Keep -1 for seeds" : "xyz_plot_no_fixed_seeds",
+        "Include Sub Images" : "xyz_plot_include_lone_images",
+        "Include Sub Grids" : "xyz_plot_include_sub_grids"
+   }
+}
