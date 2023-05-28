@@ -10,6 +10,18 @@ from modules.ui import gr_show
 from collections import namedtuple
 from pathlib import Path
 
+#  *********     versioning     *****
+repo = None
+version_map = {
+    'https://github.com/vladmandic/automatic':"vlads",
+    None: "a1111"
+    }
+#Test for a1111 or vlads, vlad had the courtesy to set a variable
+if hasattr(shared, "url"):
+    repo = version_map[getattr(shared, "url")]
+else:
+    repo = "a1111"
+
 try:
     import launch
 
@@ -105,6 +117,13 @@ class PresetManager(scripts.Script):
             "Sampling Steps": "Sampling steps",
             "Hires. steps": "Hires steps"
             }
+        
+        if repo == "vlads":
+            component_remap.update({
+                "Hires. fix" : "Hires fix"
+            })
+
+        
         config = self.get_config(self.settings_file)
         for preset in config.values():
             for old_val, new_val in component_remap.items():
@@ -134,8 +153,7 @@ class PresetManager(scripts.Script):
             "Height",
             "Restore faces",
             "Tiling",
-            "Hires. fix",#newOld A1111
-            "Hires fix",#NewNew Vlads #!update config needs a version check
+            "Hires. fix" if repo != "vlads" else "Hires fix",#NewNew Vlads #!update config needs a version check
             "Highres. fix",#old
             "Upscaler",#new
             "Upscale by",#new
