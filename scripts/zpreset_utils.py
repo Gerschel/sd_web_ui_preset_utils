@@ -102,7 +102,8 @@ class PresetManager(scripts.Script):
             "Highres. fix": "Hires. fix",
             "Firstpass width": "Upscaler",
             "Firstpass height": "Upscale by",
-            "Sampling Steps": "Sampling steps"
+            "Sampling Steps": "Sampling steps",
+            "Hires. steps": "Hires steps"
             }
         config = self.get_config(self.settings_file)
         for preset in config.values():
@@ -125,7 +126,7 @@ class PresetManager(scripts.Script):
 
         self.additional_components_for_presets = self.get_config(self.additional_settings_file) #additionalComponents
         self.available_components = [
-            "Prompt",
+            "Prompt", #! must create filter for hr prompt and neg prompt using elem_id in after component 5/28/23
             "Negative prompt",
             "Sampling steps",
             "Sampling method",
@@ -133,13 +134,16 @@ class PresetManager(scripts.Script):
             "Height",
             "Restore faces",
             "Tiling",
-            "Hires. fix",#new
+            "Hires. fix",#newOld A1111
+            "Hires fix",#NewNew Vlads #!update config needs a version check
             "Highres. fix",#old
             "Upscaler",#new
             "Upscale by",#new
-            "Hires. steps",#New
+            "Hires. steps",#NewOld,
+            "Hires steps",#NewNew
             "Resize width to",#New
             "Resize height to",#New
+            "Hires sampling method",#Newest 5/27/23
             "Seed",
             "Extra",
             "Variation seed",
@@ -152,7 +156,19 @@ class PresetManager(scripts.Script):
             "Batch count",
             "Batch size",
             "CFG Scale",
+            "Image CFG Scale",
             "Script",
+            "Input directory",
+            "Output directory",
+            "Inpaint batch mask directory (required for inpaint batch processing only)",
+            "Resize mode",
+            "Scale",
+            "Mask blur",
+            "Mask transparency",
+            "Mask mode",
+            "Masked content",
+            "Inpaint area",
+            "Only masked padding, pixels",
         ]
         
         if is_update_available:
@@ -583,6 +599,9 @@ Length: {len(self.available_components)}\t keys: {self.available_components}")
     
 
     def fetch_valid_values_from_preset(self,stackable_flag,  selection, *comps_vals):
+        #print(stackable_flag)
+        #print(selection)
+        #print(comps_vals)
         """
             Fetches selected preset from dropdown choice and filters valid components from choosen preset
             non-valid components will still have None as the page didn't contain any
@@ -590,6 +609,7 @@ Length: {len(self.available_components)}\t keys: {self.available_components}")
         if stackable_flag:
             #        saved value                           if         in  selection                     and    (true if no choices type else true if value in choices else false (got to default))       else          default value
             return [
+                #saved value
                 PresetManager.all_presets[selection][comp_name] 
                     if (comp_name in PresetManager.all_presets[selection] 
                         and (
@@ -600,11 +620,22 @@ Length: {len(self.available_components)}\t keys: {self.available_components}")
                             ) 
                         ) 
                     else 
-                        comps_vals[i] 
+                        #default value 
+                        comps_vals[i]
+                        # if it is not an option type
                         if not hasattr(self.component_map[comp_name], "choices") 
+                        # otherwise for option types choose based on index if
                         else self.component_map[comp_name].choices[comps_vals[i]] 
+                            # it is an index type
                             if type(comps_vals[i]) == int 
+                            # otherwise choose default option based on default entry
+                            #! So the error that I have is because the custom component that has text input but is of type
+                            #! dropdown, has no default, so it returns an empty list
                             else self.component_map[comp_name].choices[self.component_map[comp_name].choices.index(comps_vals[i])]
+                                # ^ if it \/ has a proper default
+                                if comps_vals[i] in self.component_map[comp_name].choices
+                                # otherwise give the first option
+                                else None#self.component_map[comp_name].choices[0]
                     for i, comp_name in enumerate(list(x for x in self.available_components if self.component_map[x] is not None and hasattr(self.component_map[x], "value")))]
         else:
             return [
