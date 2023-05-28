@@ -389,7 +389,9 @@ class PresetManager(scripts.Script):
         # TODO: element id
         #if label in self.component_map or label in self.additional_components_map:# and ele == self.additional_components["additionalComponents"]) or (ele == self.additional_components["additionalComponents"]):
         if label in self.component_map:# and ele == self.additional_components["additionalComponents"]) or (ele == self.additional_components["additionalComponents"]):
-            self.component_map.update({component.label: component})
+            #!Hack to remove conflict between main Prompt and hr Prompt
+            if self.component_map[label] is None:
+                self.component_map.update({component.label: component})
         
 
         if ele == "txt2img_generation_info_button" or ele == "img2img_generation_info_button":
